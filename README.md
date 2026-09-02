@@ -173,7 +173,7 @@ Classificação de assuntos, agrupamento de acontecimentos, IA e e-mail diário 
 
 Depois de entrar, acesse `/sources` para listar as fontes cadastradas, criar uma fonte ou editar uma existente. A edição de cada fonte também lista seus feeds e permite adicionar, editar ou remover cada um deles.
 
-O catálogo inicial de fontes e feeds fica no `SourceCatalogSeeder` e é chamado pelo `DatabaseSeeder`; use `php artisan db:seed` no ambiente local. Ao adicionar um feed, a fonte pode ser buscada no catálogo ou criada no próprio formulário. Uma fonte criada dessa forma é gravada na tabela principal `sources` dentro da mesma transação do feed.
+O catálogo inicial de fontes e feeds fica no arquivo `database/data/source-catalog.csv` e é importado pelo `SourceCatalogSeeder`, chamado pelo `DatabaseSeeder`; use `php artisan db:seed` no ambiente local ou em produção. A importação é idempotente: fontes são identificadas pelo domínio e feeds pela URL, sem duplicação. Ao adicionar um feed, a fonte pode ser buscada no catálogo ou criada no próprio formulário. Uma fonte criada dessa forma é gravada na tabela principal `sources` dentro da mesma transação do feed.
 
 Feeds aceitam somente URLs válidas com os esquemas `http` ou `https`. A listagem de fontes mostra prioridade, quantidade de feeds, status e a última coleta bem sucedida.
 

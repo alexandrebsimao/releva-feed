@@ -1,0 +1,40 @@
+source_name,domain,feed_name,category,url,priority,active
+Agência Brasil,agenciabrasil.ebc.com.br,Últimas Notícias,general,https://agenciabrasil.ebc.com.br/rss/ultimasnoticias/feed.xml,10,True
+G1,g1.globo.com,Geral,general,https://g1.globo.com/dynamo/rss2.xml,10,True
+Folha de S.Paulo,folha.uol.com.br,Em cima da hora,general,https://feeds.folha.uol.com.br/emcimadahora/rss091.xml,9,True
+Folha de S.Paulo,folha.uol.com.br,Poder,politics,https://feeds.folha.uol.com.br/poder/rss091.xml,8,True
+Folha de S.Paulo,folha.uol.com.br,Mercado,economy,https://feeds.folha.uol.com.br/mercado/rss091.xml,8,True
+UOL,uol.com.br,Notícias,general,https://rss.uol.com.br/feed/noticias.xml,9,True
+CNN Brasil,cnnbrasil.com.br,Geral,general,https://www.cnnbrasil.com.br/feed/,9,True
+ND Mais,ndmais.com.br,Geral,santa_catarina,https://ndmais.com.br/feed/,10,True
+Gazeta do Povo,gazetadopovo.com.br,Últimas Notícias,general,https://www.gazetadopovo.com.br/feed/rss/ultimas-noticias.xml,10,True
+Gazeta do Povo,gazetadopovo.com.br,República,politics,https://www.gazetadopovo.com.br/feed/rss/republica.xml,9,True
+Gazeta do Povo,gazetadopovo.com.br,Economia,economy,https://www.gazetadopovo.com.br/feed/rss/economia.xml,8,True
+Gazeta do Povo,gazetadopovo.com.br,Santa Catarina,santa_catarina,https://www.gazetadopovo.com.br/feed/rss/santa-catarina.xml,10,True
+Revista Oeste,revistaoeste.com,Geral,politics,https://revistaoeste.com/feed/,9,True
+Poder360,poder360.com.br,Geral,politics,https://www.poder360.com.br/feed/,9,True
+Metrópoles,metropoles.com,Geral,general,https://www.metropoles.com/feed,8,True
+Veja,veja.abril.com.br,Geral,general,https://veja.abril.com.br/feed/,8,True
+CartaCapital,cartacapital.com.br,Geral,politics,https://www.cartacapital.com.br/feed/,7,True
+O Antagonista,oantagonista.com,Geral,politics,https://www.oantagonista.com/feed/,7,True
+Congresso em Foco,congressoemfoco.uol.com.br,Geral,politics,https://congressoemfoco.uol.com.br/feed/,8,True
+Câmara dos Deputados,camara.leg.br,Últimas Notícias,politics,https://www.camara.leg.br/noticias/rss/ultimas-noticias,7,True
+Agência Senado,senado.leg.br,Notícias,politics,https://www12.senado.leg.br/noticias/rss,7,True
+Exame,exame.com,Geral,economy,https://exame.com/feed/,9,True
+InfoMoney,infomoney.com.br,Geral,economy,https://www.infomoney.com.br/feed/,9,True
+Money Times,moneytimes.com.br,Geral,economy,https://www.moneytimes.com.br/feed/,8,True
+Tecnoblog,tecnoblog.net,Geral,technology,https://tecnoblog.net/feed/,10,True
+Canaltech,canaltech.com.br,Geral,technology,https://canaltech.com.br/rss/,10,True
+TecMundo,tecmundo.com.br,Geral,technology,https://rss.tecmundo.com.br/feed,8,True
+Olhar Digital,olhardigital.com.br,Geral,technology,https://olhardigital.com.br/feed/,8,True
+TudoCelular,tudocelular.com,Geral,technology,https://www.tudocelular.com/feed/,7,True
+Oficina da Net,oficinadanet.com.br,Geral,technology,https://www.oficinadanet.com.br/rss/geral,8,True
+Folha de S.Paulo,folha.uol.com.br,Tecnologia,technology,https://feeds.folha.uol.com.br/tec/rss091.xml,8,True
+UOL,uol.com.br,Tecnologia,technology,https://tecnologia.uol.com.br/ultnot/index.xml,7,True
+AutoPapo,autopapo.com.br,Geral,automotive,https://autopapo.com.br/feed/,10,True
+Motor1 Brasil,motor1.uol.com.br,Geral,automotive,https://motor1.uol.com.br/rss/articles/all/,10,True
+Motor1 Brasil,motor1.uol.com.br,Elétricos e Híbridos,electric_vehicles,https://motor1.uol.com.br/rss/category/eletricos-veiculos-hibridos/,9,True
+Quatro Rodas,quatrorodas.abril.com.br,Geral,automotive,https://quatrorodas.abril.com.br/rss/,10,True
+InsideEVs Brasil,insideevs.uol.com.br,Geral,electric_vehicles,https://insideevs.uol.com.br/rss/articles/all/,9,True
+BBC News Brasil,bbc.com,Português,world,https://feeds.bbci.co.uk/portuguese/rss.xml,8,True
+DW Brasil,dw.com,Brasil,world,https://rss.dw.com/rdf/rss-br-top,7,True
