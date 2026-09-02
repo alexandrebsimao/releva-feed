@@ -17,9 +17,9 @@ RUN composer install --no-dev --no-interaction --prefer-dist --no-progress --no-
 
 COPY . .
 RUN rm -f bootstrap/cache/*.php \
+    && mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
     && composer dump-autoload --no-interaction --optimize --no-dev --no-scripts \
     && php artisan package:discover --ansi \
-    && mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
     && chown -R www-data:www-data storage bootstrap/cache
 
 COPY docker/php/entrypoint.production.sh /usr/local/bin/entrypoint.production.sh
