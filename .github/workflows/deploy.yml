@@ -1,0 +1,34 @@
+name: Deploy to VPS
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: ${{ secrets.VPS_PORT || '22' }}
+          script: |
+            cd ~/releva-feed/
+            git pull origin main
+
+            docker compose --env-file .env.production -f docker-compose-production.yml stop
+            docker compose --env-file .env.production -f docker-compose-production.yml build --no-cache
+            docker compose --env-file .env.production -f docker-compose-production.yml up -d postgres
+
+            sleep 10
+
+            docker compose --env-file .env.production -f docker-compose-production.yml run --rm app php artisan migrate --force
+            docker compose --env-file .env.production -f docker-compose-production.yml run --rm app php artisan db:seed --class=SourceCatalogSeeder --force
+            docker compose --env-file .env.production -f docker-compose-production.yml up -d
+            docker compose --env-file .env.production -f docker-compose-production.yml exec -T app php artisan config:cache
+            docker compose --env-file .env.production -f docker-compose-production.yml restart app queue scheduler

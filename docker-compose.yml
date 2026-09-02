@@ -25,7 +25,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    entrypoint: ["/usr/local/bin/entrypoint.sh"]
+    entrypoint: ["sh", "/usr/local/bin/entrypoint.sh"]
     command: ["php-fpm", "-F"]
     healthcheck:
       test: ["CMD-SHELL", "php artisan about >/dev/null 2>&1"]

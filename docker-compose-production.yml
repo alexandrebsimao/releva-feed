@@ -1,0 +1,128 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-releva_feed_production}
+      POSTGRES_USER: ${DB_USERNAME:-releva}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env.production}
+    volumes:
+      - releva_feed_postgres_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-releva} -d ${DB_DATABASE:-releva_feed_production}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile.production
+    restart: always
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-releva_feed_production}
+      DB_USERNAME: ${DB_USERNAME:-releva}
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env.production}
+    volumes:
+      - releva_feed_storage:/var/www/html/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+    entrypoint: ["sh", "/usr/local/bin/entrypoint.production.sh"]
+    command: ["php-fpm", "-F"]
+    healthcheck:
+      test: ["CMD-SHELL", "php artisan about >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks:
+      - internal
+
+  web:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile.production
+    restart: always
+    depends_on:
+      app:
+        condition: service_healthy
+    networks:
+      - proxy
+      - internal
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.releva-feed.entrypoints=https"
+      - "traefik.http.routers.releva-feed.rule=Host(`${APP_HOST:?set APP_HOST in .env.production}`)"
+      - "traefik.http.routers.releva-feed.tls=true"
+      - "traefik.http.routers.releva-feed.tls.certresolver=cloudflare"
+      - "traefik.http.services.releva-feed.loadbalancer.server.port=80"
+      - "traefik.docker.network=proxy"
+
+  queue:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile.production
+    restart: always
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-releva_feed_production}
+      DB_USERNAME: ${DB_USERNAME:-releva}
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env.production}
+    volumes:
+      - releva_feed_storage:/var/www/html/storage
+    depends_on:
+      app:
+        condition: service_healthy
+    entrypoint: ["sh", "/usr/local/bin/entrypoint.production.sh"]
+    command: ["php", "artisan", "queue:work", "--queue=feeds,articles,digests,topics,default", "--sleep=3", "--tries=3", "--timeout=180", "--no-interaction"]
+    networks:
+      - internal
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile.production
+    restart: always
+    env_file:
+      - ${ENV_FILE:-.env.production}
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: ${DB_DATABASE:-releva_feed_production}
+      DB_USERNAME: ${DB_USERNAME:-releva}
+      DB_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env.production}
+    volumes:
+      - releva_feed_storage:/var/www/html/storage
+    depends_on:
+      app:
+        condition: service_healthy
+    entrypoint: ["sh", "/usr/local/bin/entrypoint.production.sh"]
+    command: ["php", "artisan", "schedule:work"]
+    networks:
+      - internal
+
+networks:
+  proxy:
+    external: true
+  internal:
+    driver: bridge
+
+volumes:
+  releva_feed_postgres_data:
+  releva_feed_storage:

@@ -6,10 +6,32 @@ use App\Http\Requests\StoreSourceRequest;
 use App\Http\Requests\UpdateSourceRequest;
 use App\Models\Source;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class SourceController extends Controller
 {
+    public function search(Request $request): JsonResponse
+    {
+        $termValue = $request->query('q', '');
+        $term = is_scalar($termValue) ? trim((string) $termValue) : '';
+
+        $sources = Source::query()
+            ->where('active', true)
+            ->when($term !== '', fn ($query) => $query->where(function ($search) use ($term): void {
+                $term = mb_strtolower($term, 'UTF-8');
+                $search
+                    ->whereRaw('LOWER(name) LIKE ?', ['%'.$term.'%'])
+                    ->orWhereRaw('LOWER(domain) LIKE ?', ['%'.$term.'%']);
+            }))
+            ->orderBy('name')
+            ->limit(25)
+            ->get(['id', 'name', 'domain']);
+
+        return response()->json($sources);
+    }
+
     public function index(): View
     {
         $sources = Source::query()

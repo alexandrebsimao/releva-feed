@@ -63,40 +63,61 @@ Configure as variáveis de produção antes de iniciar os containers:
 
 Não execute `key:generate` a cada deploy: trocar a chave invalida sessões e dados criptografados existentes.
 
+O deploy de produção usa `docker-compose-production.yml`, uma rede externa `proxy` já conectada ao Traefik e o arquivo `.env.production`. Crie o ambiente a partir do exemplo e preencha os segredos:
+
+```bash
+cp .env.production.example .env.production
+```
+
+Gere o `APP_KEY` uma única vez e configure o domínio, banco, Resend e Groq. O domínio usado em `MAIL_FROM_ADDRESS` deve estar verificado no Resend.
+
+Se a rede do Traefik ainda não existir na VPS, crie-a uma única vez:
+
+```bash
+docker network create proxy
+```
+
 Suba a aplicação, o worker e o scheduler usando a configuração de produção:
 
 ```bash
-docker compose up -d app queue scheduler
+docker compose --env-file .env.production -f docker-compose-production.yml build
+docker compose --env-file .env.production -f docker-compose-production.yml up -d postgres
+docker compose --env-file .env.production -f docker-compose-production.yml run --rm app php artisan migrate --force
+docker compose --env-file .env.production -f docker-compose-production.yml run --rm app php artisan db:seed --class=SourceCatalogSeeder --force
+docker compose --env-file .env.production -f docker-compose-production.yml up -d
 ```
 
-Se as migrations não forem executadas pelo entrypoint do ambiente, aplique-as manualmente:
+Para gerar o `APP_KEY` no primeiro provisionamento, use `--show` e salve o valor no `.env.production` antes de iniciar a aplicação:
 
 ```bash
-docker compose exec app php artisan migrate --force
+docker compose --env-file .env.production -f docker-compose-production.yml run --rm app php artisan key:generate --show
 ```
 
-Cadastre ou atualize o catálogo inicial de fontes e feeds. O seeder é idempotente:
+Depois de alterar variáveis de ambiente com configuração cacheada, recarregue a configuração e reinicie os processos persistentes:
 
 ```bash
-docker compose exec app php artisan db:seed --class=SourceCatalogSeeder --force
+docker compose --env-file .env.production -f docker-compose-production.yml exec -T app php artisan config:cache
+docker compose --env-file .env.production -f docker-compose-production.yml restart app queue scheduler
 ```
+
+O workflow [deploy.yml](/Users/alexandreaugustobernssimao/Projects/releva-feed/.github/workflows/deploy.yml) segue o mesmo padrão do `naval-battle`: espera o projeto em `~/releva-feed/`, executa `git pull`, refaz o build, aplica migrations, atualiza o catálogo de fontes e sobe os serviços. Configure no GitHub os secrets `VPS_HOST`, `VPS_USERNAME`, `VPS_PASSWORD` e, opcionalmente, `VPS_PORT`. O arquivo `.env.production` deve existir somente na VPS.
 
 Para importar imediatamente os artigos, dispare a coleta:
 
 ```bash
-docker compose exec app php artisan feeds:collect
+docker compose --env-file .env.production -f docker-compose-production.yml exec -T app php artisan feeds:collect
 ```
 
 Esse comando apenas coloca jobs na fila. O serviço `queue` coleta os feeds e depois processa os artigos. Acompanhe a execução com:
 
 ```bash
-docker compose logs -f queue
+docker compose --env-file .env.production -f docker-compose-production.yml logs -f app queue scheduler
 ```
 
 Consulte jobs que falharam com:
 
 ```bash
-docker compose exec app php artisan queue:failed
+docker compose --env-file .env.production -f docker-compose-production.yml exec -T app php artisan queue:failed
 ```
 
 O serviço `scheduler` dispara novas coletas automaticamente a cada seis horas. Em uma infraestrutura sem o container `scheduler`, configure um cron para executar `php artisan schedule:run` a cada minuto. Não mantenha dois schedulers ou workers concorrentes para a mesma finalidade sem necessidade.
@@ -152,6 +173,8 @@ Classificação de assuntos, agrupamento de acontecimentos, IA e e-mail diário 
 
 Depois de entrar, acesse `/sources` para listar as fontes cadastradas, criar uma fonte ou editar uma existente. A edição de cada fonte também lista seus feeds e permite adicionar, editar ou remover cada um deles.
 
+O catálogo inicial de fontes e feeds fica no `SourceCatalogSeeder` e é chamado pelo `DatabaseSeeder`; use `php artisan db:seed` no ambiente local. Ao adicionar um feed, a fonte pode ser buscada no catálogo ou criada no próprio formulário. Uma fonte criada dessa forma é gravada na tabela principal `sources` dentro da mesma transação do feed.
+
 Feeds aceitam somente URLs válidas com os esquemas `http` ou `https`. A listagem de fontes mostra prioridade, quantidade de feeds, status e a última coleta bem sucedida.
 
 ## Importação RSS
@@ -164,7 +187,7 @@ docker compose exec app php artisan feeds:collect
 
 O comando também é disparado automaticamente pelo scheduler a cada seis horas, sem sobreposição. `DispatchFeedFetchesJob` encontra os feeds elegíveis e `FetchFeedJob` processa um feed por vez, com três tentativas e backoff. Falhas atualizam `last_fetched_at`, `failure_count` e `last_error` no feed; sucessos atualizam `last_success_at` e zeram o contador de falhas. A deduplicação ocorre por GUID, URL canônica/URL e hash do conteúdo, sem alterar artigos já importados.
 
-Os artigos importados podem ser visualizados em `/articles`. Os testes usam XML local em `tests/Fixtures` e não fazem requisições à internet.
+Os artigos importados podem ser visualizados em `/articles`, com filtro por múltiplas fontes. O feed público e o Meu Radar também permitem selecionar várias fontes; nos filtros por URL, a seleção pode ser compartilhada. Os testes usam XML local em `tests/Fixtures` e não fazem requisições à internet.
 
 Os indicadores de saúde ficam disponíveis na listagem de fontes e na edição de cada fonte: última tentativa, último sucesso, falhas acumuladas e erro mais recente por feed.
 

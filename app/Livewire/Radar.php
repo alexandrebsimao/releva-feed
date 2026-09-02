@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use App\Models\NewsCluster;
 use App\Models\UserTopicPreference;
+use App\Support\SourceSelection;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -21,9 +22,17 @@ class Radar extends Component
     #[Url(as: 'topic', except: '')]
     public string $topic = '';
 
+    /** @var list<int|string> */
+    public array $sourceIds = [];
+
     public function selectTopic(string $topic = ''): void
     {
         $this->topic = $topic;
+        $this->resetPage();
+    }
+
+    public function updatedSourceIds(): void
+    {
         $this->resetPage();
     }
 
@@ -42,6 +51,7 @@ class Radar extends Component
         $selectedTopic = $followedPreferences->first(
             fn (UserTopicPreference $preference): bool => $preference->topic->slug === $this->topic,
         );
+        $sourceOptions = SourceSelection::options();
 
         $clusters = NewsCluster::query()
             ->whereIn('public_status', [NewsCluster::STATUS_AUTOMATIC, NewsCluster::STATUS_FEATURED])
@@ -70,7 +80,24 @@ class Radar extends Component
                     );
                 },
             )
-            ->with(['articles.feed.source', 'articles.topics'])
+            ->when(
+                $this->sourceIds !== [],
+                fn (Builder $query): Builder => $query->whereHas(
+                    'articles.feed',
+                    fn (Builder $feedQuery): Builder => $feedQuery->whereIn('source_id', $this->sourceIds),
+                ),
+            )
+            ->with([
+                'articles' => fn ($articleQuery) => $articleQuery
+                    ->when(
+                        $this->sourceIds !== [],
+                        fn ($query) => $query->whereHas(
+                            'feed',
+                            fn (Builder $feedQuery): Builder => $feedQuery->whereIn('source_id', $this->sourceIds),
+                        ),
+                    )
+                    ->with(['feed.source', 'topics']),
+            ])
             ->orderByDesc('last_article_at')
             ->orderByDesc('id')
             ->paginate(10);
@@ -82,7 +109,7 @@ class Radar extends Component
             fn (string $day): array => [$day => $this->dayLabel(Carbon::parse($day))],
         )->all();
 
-        return view('livewire.radar', compact('clusters', 'followedPreferences', 'groupedClusters', 'dayLabels'));
+        return view('livewire.radar', compact('clusters', 'followedPreferences', 'groupedClusters', 'dayLabels', 'sourceOptions'));
     }
 
     public function recencyLabel(CarbonInterface $date): string

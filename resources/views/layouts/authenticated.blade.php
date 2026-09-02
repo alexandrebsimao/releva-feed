@@ -17,6 +17,7 @@
                 <span>Releva Feed</span>
             </a>
             <div class="flex items-center gap-4 text-sm">
+                <a href="{{ route('dashboard') }}" class="hidden font-medium text-slate-600 transition hover:text-slate-950 sm:inline">Dashboard</a>
                 <a href="{{ route('sources.index') }}" class="hidden font-medium text-slate-600 transition hover:text-slate-950 sm:inline">Fontes</a>
                 <a href="{{ route('articles.index') }}" class="hidden font-medium text-slate-600 transition hover:text-slate-950 sm:inline">Artigos</a>
                 <a href="{{ route('radar') }}" class="hidden font-medium text-slate-600 transition hover:text-slate-950 sm:inline">Meu radar</a>

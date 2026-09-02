@@ -10,6 +10,10 @@
             </div>
         </div>
 
+        <div class="mt-12">
+            @include('shared.source-filter', ['filterAction' => route('home')])
+        </div>
+
         <section class="mt-16">
             <div class="flex items-end justify-between gap-4 border-b border-white/10 pb-4"><div><p class="text-xs font-semibold uppercase tracking-[0.2em] text-amber-300">Em evidência</p><h2 class="mt-2 text-3xl font-semibold text-white">Destaques</h2></div><span class="hidden text-sm text-slate-500 sm:inline">Seleção por relevância geral</span></div>
             @if ($highlights->isEmpty())
@@ -35,7 +39,17 @@
             @if ($agora->isEmpty())
                 <p class="py-8 text-sm text-slate-500">Nenhum acontecimento recente.</p>
             @else
-                <div class="mt-4 divide-y divide-white/10">@foreach ($agora as $cluster)<a href="{{ route('news.show', $cluster) }}" class="flex flex-col gap-2 py-5 transition hover:bg-white/[0.03] sm:flex-row sm:items-baseline sm:gap-6"><time class="shrink-0 text-sm font-semibold text-amber-300">{{ $cluster->last_article_at?->format('H:i') }}</time><span class="text-lg font-medium text-white">{{ $cluster->title }}</span><span class="text-sm text-slate-500 sm:ml-auto">{{ $cluster->category ?: 'Acontecimento' }}</span></a>@endforeach</div>
+                <div class="mt-4 divide-y divide-white/10">
+                    @foreach ($agora as $cluster)
+                        @php
+                            $clusterUrl = route('news.show', $cluster);
+                            if (! empty($selectedSourceIds)) {
+                                $clusterUrl .= '?'.http_build_query(['sources' => $selectedSourceIds]);
+                            }
+                        @endphp
+                        <a href="{{ $clusterUrl }}" class="flex flex-col gap-2 py-5 transition hover:bg-white/[0.03] sm:flex-row sm:items-baseline sm:gap-6"><time class="shrink-0 text-sm font-semibold text-amber-300">{{ $cluster->last_article_at?->format('H:i') }}</time><span class="text-lg font-medium text-white">{{ $cluster->title }}</span><span class="text-sm text-slate-500 sm:ml-auto">{{ $cluster->category ?: 'Acontecimento' }}</span></a>
+                    @endforeach
+                </div>
             @endif
         </section>
     </section>

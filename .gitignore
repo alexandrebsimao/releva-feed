@@ -1,0 +1,30 @@
+# Environment files and local secrets
+/.env
+/.env.*
+!/.env.example
+!/.env.production.example
+
+# Dependencies
+/vendor/
+/node_modules/
+
+# Laravel generated files
+/public/hot
+/public/build/
+/storage/*.key
+/storage/logs/*
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/framework/views/*
+/bootstrap/cache/*.php
+
+# Local databases and test artifacts
+/database/*.sqlite
+/.phpunit.result.cache
+
+# Local tooling and operating system files
+.DS_Store
+.idea/
+.vscode/
+*.swp

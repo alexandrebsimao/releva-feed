@@ -4,7 +4,7 @@ return [
     'provider' => env('AI_PROVIDER', 'groq'),
     'classifier_model' => env('AI_CLASSIFIER_MODEL'),
     'summarizer_model' => env('AI_SUMMARIZER_MODEL'),
-    'request_interval_ms' => (int) env('AI_REQUEST_INTERVAL_MS', 3000),
+    'request_interval_ms' => (int) env('AI_REQUEST_INTERVAL_MS', 5000),
 
     'default' => env('AI_PROVIDER', 'groq'),
 

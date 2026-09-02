@@ -15,18 +15,19 @@ class HomepageNewsService
     /**
      * @return array{highlights: Collection<int, NewsCluster>, brasil: Collection<int, NewsCluster>, tecnologia: Collection<int, NewsCluster>, automotivo: Collection<int, NewsCluster>, agora: Collection<int, NewsCluster>}
      */
-    public function sections(): array
+    /** @param list<int> $sourceIds */
+    public function sections(array $sourceIds = []): array
     {
+        $sourceIds = collect($sourceIds)->map(fn ($id): int => (int) $id)->filter()->unique()->sort()->values()->all();
+
+        if ($sourceIds !== []) {
+            return $this->buildSections($sourceIds);
+        }
+
         return Cache::remember(
             self::CACHE_KEY,
             now()->addMinutes((int) config('homepage.cache_ttl_minutes', 5)),
-            fn (): array => [
-                'highlights' => $this->highlights(),
-                'brasil' => $this->byCategory('brasil'),
-                'tecnologia' => $this->byCategory('tecnologia'),
-                'automotivo' => $this->byCategory('automotivo'),
-                'agora' => $this->recent(),
-            ],
+            fn (): array => $this->buildSections($sourceIds),
         );
     }
 
@@ -43,10 +44,22 @@ class HomepageNewsService
         return $this->sections();
     }
 
-    /** @return Collection<int, NewsCluster> */
-    private function highlights(): Collection
+    /** @param list<int> $sourceIds */
+    private function buildSections(array $sourceIds): array
     {
-        return $this->eligibleQuery()
+        return [
+            'highlights' => $this->highlights($sourceIds),
+            'brasil' => $this->byCategory('brasil', $sourceIds),
+            'tecnologia' => $this->byCategory('tecnologia', $sourceIds),
+            'automotivo' => $this->byCategory('automotivo', $sourceIds),
+            'agora' => $this->recent($sourceIds),
+        ];
+    }
+
+    /** @param list<int> $sourceIds @return Collection<int, NewsCluster> */
+    private function highlights(array $sourceIds): Collection
+    {
+        return $this->eligibleQuery($sourceIds)
             ->where(function (Builder $query): void {
                 $query->where('public_status', NewsCluster::STATUS_FEATURED)
                     ->orWhere(function (Builder $automatic): void {
@@ -62,12 +75,12 @@ class HomepageNewsService
             ->get();
     }
 
-    /** @return Collection<int, NewsCluster> */
-    private function byCategory(string $category): Collection
+    /** @param list<int> $sourceIds @return Collection<int, NewsCluster> */
+    private function byCategory(string $category, array $sourceIds): Collection
     {
         $terms = config("homepage.categories.{$category}.terms", [$category]);
 
-        return $this->eligibleQuery()
+        return $this->eligibleQuery($sourceIds)
             ->where(function (Builder $query) use ($terms, $category): void {
                 $this->whereTextMatches($query, 'category', $terms);
                 $query->orWhereHas('articles.feed', function (Builder $feedQuery) use ($terms): void {
@@ -89,10 +102,10 @@ class HomepageNewsService
             ->get();
     }
 
-    /** @return Collection<int, NewsCluster> */
-    private function recent(): Collection
+    /** @param list<int> $sourceIds @return Collection<int, NewsCluster> */
+    private function recent(array $sourceIds): Collection
     {
-        return $this->eligibleQuery()
+        return $this->eligibleQuery($sourceIds)
             ->where('last_article_at', '>=', now()->subHours((int) config('homepage.now_hours', 24)))
             ->orderByDesc('last_article_at')
             ->orderByDesc('id')
@@ -100,8 +113,8 @@ class HomepageNewsService
             ->get();
     }
 
-    /** @return Builder<NewsCluster> */
-    private function eligibleQuery(): Builder
+    /** @param list<int> $sourceIds @return Builder<NewsCluster> */
+    private function eligibleQuery(array $sourceIds): Builder
     {
         return NewsCluster::query()
             ->where(function (Builder $query): void {
@@ -112,7 +125,21 @@ class HomepageNewsService
                             ->where('general_score', '>=', $this->automaticMinimumScore());
                     });
             })
-            ->with(['articles.feed.source', 'articles.topics']);
+            ->when($sourceIds !== [], fn (Builder $query): Builder => $query->whereHas(
+                'articles.feed',
+                fn (Builder $feedQuery): Builder => $feedQuery->whereIn('source_id', $sourceIds),
+            ))
+            ->with([
+                'articles' => fn ($articleQuery) => $articleQuery
+                    ->when(
+                        $sourceIds !== [],
+                        fn ($query) => $query->whereHas(
+                            'feed',
+                            fn (Builder $feedQuery): Builder => $feedQuery->whereIn('source_id', $sourceIds),
+                        ),
+                    )
+                    ->with(['feed.source', 'topics']),
+            ]);
     }
 
     /** @param list<string> $terms */

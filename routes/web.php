@@ -38,6 +38,7 @@ Route::middleware('auth')->group(function (): void {
     Route::patch('/topics/{topic}/ignore', [TopicController::class, 'ignore'])->name('topics.ignore');
     Route::resource('topics', TopicController::class)->except(['show']);
 
+    Route::get('/sources/search', [SourceController::class, 'search'])->name('sources.search');
     Route::resource('sources', SourceController::class)->except(['show']);
     Route::resource('sources.feeds', FeedController::class)
         ->only(['create', 'store', 'edit', 'update', 'destroy']);

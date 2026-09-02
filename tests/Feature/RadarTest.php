@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Livewire\Radar;
 use App\Models\Article;
 use App\Models\NewsCluster;
+use App\Models\Source;
 use App\Models\Topic;
 use App\Models\User;
 use App\Models\UserTopicPreference;
@@ -83,6 +84,27 @@ class RadarTest extends TestCase
             ->assertDontSee('Acontecimento Economia');
     }
 
+    public function test_radar_can_filter_clusters_by_multiple_sources(): void
+    {
+        $user = User::factory()->create();
+        $topic = Topic::factory()->create(['name' => 'Tecnologia']);
+        $this->follow($user, $topic);
+        $firstSource = Source::factory()->create(['name' => 'Fonte radar A']);
+        $secondSource = Source::factory()->create(['name' => 'Fonte radar B']);
+        $thirdSource = Source::factory()->create(['name' => 'Fonte radar C']);
+
+        $first = $this->cluster('Acontecimento da fonte A', now(), [$topic], $firstSource);
+        $second = $this->cluster('Acontecimento da fonte B', now()->subMinute(), [$topic], $secondSource);
+        $this->cluster('Acontecimento da fonte C', now()->subMinutes(2), [$topic], $thirdSource);
+
+        Livewire::actingAs($user)
+            ->test(Radar::class)
+            ->set('sourceIds', [$firstSource->id, $secondSource->id])
+            ->assertSee($first->title)
+            ->assertSee($second->title)
+            ->assertDontSee('Acontecimento da fonte C');
+    }
+
     public function test_excluded_topic_removes_a_cluster_even_when_another_topic_is_followed(): void
     {
         $user = User::factory()->create();
@@ -116,7 +138,7 @@ class RadarTest extends TestCase
             ->assertSee('Cluster paginado 10');
     }
 
-    private function cluster(string $title, Carbon $date, array $topics): NewsCluster
+    private function cluster(string $title, Carbon $date, array $topics, ?Source $source = null): NewsCluster
     {
         $cluster = NewsCluster::factory()->create([
             'title' => $title,
@@ -125,10 +147,18 @@ class RadarTest extends TestCase
             'published_at' => $date,
             'last_article_at' => $date,
         ]);
-        $article = Article::factory()->create([
+        $articleData = [
             'original_title' => $title,
             'published_at' => $date,
-        ]);
+        ];
+        if ($source !== null) {
+            $articleData['feed_id'] = $source->feeds()->create([
+                'name' => 'Feed de '.$source->name,
+                'url' => 'https://'.$source->domain.'/feed.xml',
+                'active' => true,
+            ])->id;
+        }
+        $article = Article::factory()->create($articleData);
         $article->topics()->attach(collect($topics)->mapWithKeys(fn (Topic $topic): array => [
             $topic->id => ['confidence' => 1, 'detected_by' => 'test'],
         ])->all());

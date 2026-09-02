@@ -6,6 +6,10 @@
             <p class="mt-3 text-slate-500">Visualização administrativa dos artigos recebidos pelos feeds.</p>
         </div>
 
+        <div class="mt-8">
+            @include('shared.source-filter', ['filterAction' => route('articles.index')])
+        </div>
+
         <div class="mt-10 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
             @if ($articles->isEmpty())
                 <div class="px-6 py-16 text-center"><h2 class="text-lg font-semibold text-slate-900">Nenhum artigo importado</h2><p class="mt-2 text-sm text-slate-500">Execute a coleta de feeds para começar a visualizar artigos.</p></div>
@@ -18,6 +22,13 @@
                                 <span class="shrink-0 rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">{{ $article->processing_status }}</span>
                             </div>
                             @if ($article->description)<p class="mt-4 max-w-4xl text-sm leading-6 text-slate-600">{{ \Illuminate\Support\Str::limit($article->description, 280) }}</p>@endif
+                            <div class="mt-4 flex flex-wrap items-center gap-2" aria-label="Tags do artigo">
+                                @forelse ($article->topics as $topic)
+                                    <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">{{ $topic->name }}</span>
+                                @empty
+                                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500">Aguardando classificação</span>
+                                @endforelse
+                            </div>
                             <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-slate-400"><span>Publicado {{ $article->published_at->format('d/m/Y H:i') }}</span><span>Importado {{ $article->imported_at->format('d/m/Y H:i') }}</span>@if ($article->author)<span>Por {{ $article->author }}</span>@endif</div>
                         </article>
                     @endforeach

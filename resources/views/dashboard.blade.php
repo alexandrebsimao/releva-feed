@@ -6,6 +6,10 @@
             <p class="mt-3 max-w-2xl text-slate-500">Seu radar reúne notícias ligadas aos assuntos acompanhados e respeita todas as exclusões.</p>
         </div>
 
+        <div class="mt-8">
+            @include('shared.source-filter', ['filterAction' => route('dashboard')])
+        </div>
+
         <section class="mt-10 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
             <div class="flex flex-col justify-between gap-4 border-b border-slate-100 px-6 py-6 sm:flex-row sm:items-center">
                 <div>
@@ -26,7 +30,10 @@
                         <article class="px-6 py-6 transition hover:bg-slate-50">
                             <a href="{{ $article->url }}" target="_blank" rel="noopener noreferrer" class="text-lg font-semibold leading-7 text-slate-900 hover:text-amber-700">{{ $article->original_title }}</a>
                             <p class="mt-2 text-sm text-slate-500">{{ $article->feed->source->name }} · {{ $article->feed->name }}</p>
-                            @foreach ($article->clusters as $cluster)<a href="{{ route('news.show', $cluster) }}" class="mt-2 inline-flex text-sm font-semibold text-amber-700 hover:text-amber-600">Ver acontecimento consolidado →</a>@endforeach
+                            @foreach ($article->clusters as $cluster)
+                                @php($clusterUrl = route('news.show', $cluster).(! empty($selectedSourceIds) ? '?'.http_build_query(['sources' => $selectedSourceIds]) : ''))
+                                <a href="{{ $clusterUrl }}" class="mt-2 inline-flex text-sm font-semibold text-amber-700 hover:text-amber-600">Ver acontecimento consolidado →</a>
+                            @endforeach
                             <p class="mt-2 text-xs font-medium text-slate-400">Relevância para você: {{ $article->user_relevance_score }}/100</p>
                             @if ($article->description)<p class="mt-3 max-w-4xl text-sm leading-6 text-slate-600">{{ \Illuminate\Support\Str::limit($article->description, 240) }}</p>@endif
                             <div class="mt-4 flex flex-wrap gap-2">@foreach ($article->topics as $topic)<span class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">{{ $topic->name }}</span>@endforeach</div>
