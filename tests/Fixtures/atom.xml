@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom"
+      xmlns:media="http://search.yahoo.com/mrss/">
+    <title>Atom Exemplo</title>
+    <id>https://atom.example.com/</id>
+    <updated>2026-09-02T15:00:00Z</updated>
+    <entry>
+        <title>Notícia Atom</title>
+        <id>tag:atom.example.com,2026:entry-1</id>
+        <link rel="alternate" href="https://atom.example.com/entries/1"/>
+        <link rel="canonical" href="https://atom.example.com/entries/1?view=canonical"/>
+        <summary>Resumo da notícia Atom.</summary>
+        <author><name>Bruno Editor</name></author>
+        <published>2026-09-02T14:00:00Z</published>
+        <media:thumbnail url="https://atom.example.com/images/1.jpg"/>
+    </entry>
+</feed>

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+     xmlns:content="http://purl.org/rss/1.0/modules/content/"
+     xmlns:dc="http://purl.org/dc/elements/1.1/"
+     xmlns:media="http://search.yahoo.com/mrss/"
+     xmlns:atom="http://www.w3.org/2005/Atom">
+    <channel>
+        <title>Jornal Exemplo</title>
+        <link>https://news.example.com</link>
+        <description>Notícias locais</description>
+        <item>
+            <title>Primeira notícia do dia</title>
+            <link>https://news.example.com/articles/first</link>
+            <guid isPermaLink="false">article-first-001</guid>
+            <description><![CDATA[<p>Um resumo da primeira notícia.</p>]]></description>
+            <dc:creator>Ana Jornalista</dc:creator>
+            <pubDate>Tue, 02 Sep 2026 12:00:00 GMT</pubDate>
+            <media:content url="https://news.example.com/images/first.jpg" type="image/jpeg"/>
+        </item>
+        <item>
+            <title>Segunda notícia do dia</title>
+            <link>https://news.example.com/articles/second</link>
+            <guid isPermaLink="false">article-second-002</guid>
+            <content:encoded><![CDATA[<p>Conteúdo completo da segunda notícia.</p>]]></content:encoded>
+            <pubDate>Tue, 02 Sep 2026 13:00:00 GMT</pubDate>
+        </item>
+    </channel>
+</rss>
