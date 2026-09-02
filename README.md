@@ -59,6 +59,7 @@ Configure as variáveis de produção antes de iniciar os containers:
 - `QUEUE_CONNECTION=database`;
 - `AI_PROVIDER=groq`, `GROQ_API_KEY`, `AI_CLASSIFIER_MODEL` e `AI_SUMMARIZER_MODEL`;
 - SMTP de produção (`MAIL_MAILER`, `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` e `MAIL_FROM_ADDRESS`).
+- Para usar Resend, configure `MAIL_MAILER=resend`, `RESEND_API_KEY` e um `MAIL_FROM_ADDRESS` de domínio verificado no Resend.
 
 Não execute `key:generate` a cada deploy: trocar a chave invalida sessões e dados criptografados existentes.
 
@@ -99,6 +100,22 @@ docker compose exec app php artisan queue:failed
 ```
 
 O serviço `scheduler` dispara novas coletas automaticamente a cada seis horas. Em uma infraestrutura sem o container `scheduler`, configure um cron para executar `php artisan schedule:run` a cada minuto. Não mantenha dois schedulers ou workers concorrentes para a mesma finalidade sem necessidade.
+
+O digest diário é construído para cada usuário habilitado após o horário configurado e enviado pela fila `digests`. A seleção considera preferências, exclusões, score de relevância e notícias ainda não enviadas. Em produção, com Resend:
+
+```dotenv
+MAIL_MAILER=resend
+RESEND_API_KEY=re_xxxxxxxxx
+MAIL_FROM_ADDRESS=noticias@seu-dominio-verificado.com
+MAIL_FROM_NAME="Releva Feed"
+```
+
+Depois de alterar variáveis de ambiente com configuração cacheada, recarregue a configuração e reinicie os workers:
+
+```bash
+docker compose exec app php artisan config:cache
+docker compose restart queue scheduler
+```
 
 ## Autenticação
 
