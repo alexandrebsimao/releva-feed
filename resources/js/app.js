@@ -217,6 +217,18 @@ document.querySelectorAll('[data-infinite-feed]').forEach((feed) => {
     observer.observe(sentinel);
 });
 
+document.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-save-item]');
+
+    if (!button) {
+        return;
+    }
+
+    const saved = button.dataset.saved === 'true';
+    button.dataset.saved = saved ? 'false' : 'true';
+    button.setAttribute('aria-label', saved ? 'Salvar para ler depois' : 'Remover dos salvos');
+});
+
 if ('serviceWorker' in navigator && window.isSecureContext) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('/sw.js').catch((error) => {

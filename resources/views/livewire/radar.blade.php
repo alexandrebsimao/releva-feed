@@ -1,4 +1,4 @@
-<section class="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-12">
+<section class="radar-page mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:py-12">
         <div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
             <div>
                 <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-600">Curadoria pessoal</p>
@@ -7,28 +7,26 @@
             </div>
         </div>
 
-        <div class="sticky top-0 z-20 -mx-4 mt-8 border-y border-slate-200 bg-slate-100/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:rounded-2xl lg:border">
-            <div class="flex items-center gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div class="radar-filter-panel sticky top-0 z-20 -mx-4 mt-8 border-y border-slate-200 bg-slate-100/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:rounded-2xl lg:border">
+            <div class="radar-filter-heading">
+                <div><p>Filtre seu radar</p><span>{{ $topic !== '' ? 'Assunto selecionado' : 'Escolha um assunto para começar' }}@if ($sourceIds !== []) · {{ count($sourceIds) }} {{ count($sourceIds) === 1 ? 'fonte' : 'fontes' }}@endif</span></div>
+                @if ($sourceIds !== [])<button wire:click="$set('sourceIds', [])" class="radar-clear-sources">Limpar fontes</button>@endif
+            </div>
+            <div class="radar-topic-list flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <button wire:click="selectTopic('')" class="shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition {{ $topic === '' ? 'bg-slate-950 text-white' : 'border border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:text-slate-950' }}">Todos</button>
                 @foreach ($followedPreferences as $preference)
                     <button wire:key="radar-topic-{{ $preference->topic_id }}" wire:click="selectTopic('{{ $preference->topic->slug }}')" class="shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition {{ $topic === $preference->topic->slug ? 'bg-amber-300 text-slate-950' : 'border border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:text-slate-950' }}">{{ $preference->topic->name }}</button>
                 @endforeach
                 <a href="{{ route('my-topics.index') }}" class="shrink-0 rounded-full border border-dashed border-amber-500 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-800 transition hover:bg-amber-100">+ Assuntos</a>
             </div>
-            <div class="mt-4 border-t border-slate-200 pt-4">
-                <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                    <div><p class="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Fontes</p><p class="mt-1 text-sm text-slate-500">Você pode selecionar mais de uma.</p></div>
-                    @if ($sourceIds !== [])<button wire:click="$set('sourceIds', [])" class="text-sm font-semibold text-amber-700 hover:text-amber-600">Limpar fontes</button>@endif
-                </div>
-                <div class="mt-3 grid max-h-44 gap-2 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
+            <details class="radar-source-details">
+                <summary><span class="radar-source-icon">◎</span><span><strong>Fontes</strong><small>{{ $sourceIds === [] ? 'Todas as fontes' : count($sourceIds).' selecionada(s)' }}</small></span><span class="radar-chevron">⌄</span></summary>
+                <div class="radar-source-options">
                     @foreach ($sourceOptions as $sourceOption)
-                        <label wire:key="radar-source-{{ $sourceOption->id }}" class="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 transition hover:border-amber-300">
-                            <input type="checkbox" value="{{ $sourceOption->id }}" wire:model.live="sourceIds" class="rounded border-slate-300 text-amber-500 focus:ring-amber-300">
-                            <span class="truncate text-sm font-medium text-slate-700">{{ $sourceOption->name }}</span>
-                        </label>
+                        <label wire:key="radar-source-{{ $sourceOption->id }}" class="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 transition hover:border-amber-300"><input type="checkbox" value="{{ $sourceOption->id }}" wire:model.live="sourceIds" class="rounded border-slate-300 text-amber-500 focus:ring-amber-300"><span class="truncate text-sm font-medium text-slate-700">{{ $sourceOption->name }}</span></label>
                     @endforeach
                 </div>
-            </div>
+            </details>
         </div>
 
         <div class="mt-8" wire:loading.class="opacity-60" wire:target="selectTopic, nextPage, previousPage, gotoPage">

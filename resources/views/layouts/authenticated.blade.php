@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" content="#fafafa">
     <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
     <link rel="icon" href="{{ asset('icons/icon.svg') }}" type="image/svg+xml">
     <link rel="apple-touch-icon" href="{{ asset('icons/icon.svg') }}">
@@ -13,45 +13,85 @@
     @endif
     @livewireStyles
 </head>
-<body class="min-h-screen bg-slate-100 text-slate-900">
-    <header class="border-b border-slate-200 bg-white">
-        <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 sm:py-5">
-            <a href="{{ route('dashboard') }}" class="flex items-center gap-3 text-lg font-semibold tracking-tight">
-                <span class="flex h-9 w-9 items-center justify-center rounded-xl bg-slate-900 font-black text-amber-300">R</span>
-                <span class="hidden sm:inline">Releva Feed</span>
-            </a>
-            <div class="flex items-center gap-3 text-sm">
-                <nav class="hidden items-center gap-4 sm:flex" aria-label="Navegação principal">
-                    <a href="{{ route('dashboard') }}" class="font-medium text-slate-600 transition hover:text-slate-950">Meu feed</a>
-                    <a href="{{ route('preferences.index') }}" class="font-medium text-slate-600 transition hover:text-slate-950">Preferências</a>
-                    <span class="text-slate-500">{{ auth()->user()->name }}</span>
-                    <form method="POST" action="{{ route('logout') }}">
-                        @csrf
-                        <button class="font-medium text-slate-600 transition hover:text-slate-950">Sair</button>
-                    </form>
-                </nav>
+<body class="app-shell min-h-screen bg-[#fafafa] text-slate-900">
+    @php($userInitial = strtoupper(substr(trim(auth()->user()->name), 0, 1)))
 
-                <details class="relative sm:hidden">
-                    <summary class="flex cursor-pointer list-none items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 shadow-sm [&::-webkit-details-marker]:hidden">
-                        <span class="sr-only">Abrir navegação</span>
-                        <span aria-hidden="true" class="text-lg leading-none">☰</span>
-                        <span>Menu</span>
-                    </summary>
-                    <nav class="absolute right-0 z-40 mt-2 min-w-52 overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-xl" aria-label="Navegação mobile">
-                        <a href="{{ route('dashboard') }}" class="block rounded-xl px-3 py-2.5 font-medium text-slate-700 hover:bg-slate-50">Meu feed</a>
-                        <a href="{{ route('preferences.index') }}" class="block rounded-xl px-3 py-2.5 font-medium text-slate-700 hover:bg-slate-50">Preferências</a>
-                        <p class="border-t border-slate-100 px-3 pb-1 pt-3 text-xs text-slate-400">{{ auth()->user()->name }}</p>
-                        <form method="POST" action="{{ route('logout') }}" class="border-t border-slate-100 pt-1">
-                            @csrf
-                            <button class="block w-full rounded-xl px-3 py-2.5 text-left font-medium text-slate-700 hover:bg-slate-50">Sair</button>
-                        </form>
-                    </nav>
-                </details>
+    <aside class="desktop-sidebar" aria-label="Navegação principal">
+        <a href="{{ route('dashboard') }}" class="brand-lockup">
+            <span class="brand-mark">R</span>
+            <span class="brand-wordmark">Releva <em>Feed</em></span>
+        </a>
+
+        <nav class="sidebar-nav">
+            <a href="{{ route('dashboard') }}" @class(['sidebar-link', 'is-active' => request()->routeIs('dashboard')])>
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="m3 10.7 9-7.2 9 7.2v8.1a2.2 2.2 0 0 1-2.2 2.2H5.2A2.2 2.2 0 0 1 3 18.8v-8.1Z" stroke="currentColor" stroke-width="1.8"/><path d="M9.2 21v-6.2h5.6V21" stroke="currentColor" stroke-width="1.8"/></svg>
+                <span>Meu feed</span>
+            </a>
+            <a href="{{ route('radar') }}" @class(['sidebar-link', 'is-active' => request()->routeIs('radar')])>
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.7" stroke="currentColor" stroke-width="1.8"/><path d="m12 12 5.3-5.3M12 8.5v3.6h3.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/></svg>
+                <span>Acontecimentos</span>
+            </a>
+            <a href="{{ route('my-sources.index') }}" @class(['sidebar-link', 'is-active' => request()->routeIs('my-sources.index') || request()->routeIs('sources.*')])>
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M4 7.4A2.4 2.4 0 0 1 6.4 5h11.2A2.4 2.4 0 0 1 20 7.4v9.2a2.4 2.4 0 0 1-2.4 2.4H6.4A2.4 2.4 0 0 1 4 16.6V7.4Z" stroke="currentColor" stroke-width="1.8"/><path d="M8 9h8M8 13h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                <span>Minhas fontes</span>
+            </a>
+            <a href="{{ route('preferences.index') }}" @class(['sidebar-link', 'is-active' => request()->routeIs('preferences.*') || request()->routeIs('my-topics.*')])>
+                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M12 3.6v2.1M12 18.3v2.1M20.4 12h-2.1M5.7 12H3.6M17.9 6.1l-1.5 1.5M7.6 16.4l-1.5 1.5M17.9 17.9l-1.5-1.5M7.6 7.6 6.1 6.1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="3.6" stroke="currentColor" stroke-width="1.8"/></svg>
+                <span>Preferências</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-bottom">
+            @if (auth()->user()->is_admin)
+                <a href="{{ route('admin.observability') }}" class="sidebar-link sidebar-link-small">
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M4 19.5h16M6.5 17V9.5M12 17V5.5M17.5 17v-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    <span>Operação</span>
+                </a>
+            @endif
+            <div class="sidebar-account">
+                <span class="user-avatar user-avatar-sm">{{ $userInitial }}</span>
+                <span class="min-w-0"><strong>{{ auth()->user()->name }}</strong><small>Seu perfil</small></span>
+                <form method="POST" action="{{ route('logout') }}" class="ml-auto">
+                    @csrf
+                    <button type="submit" class="icon-button" aria-label="Sair">
+                        <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M14 5h4a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-4M10 8l-4 4 4 4M6 12h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </button>
+                </form>
             </div>
         </div>
+    </aside>
+
+    <header class="mobile-topbar">
+        <a href="{{ route('dashboard') }}" class="brand-lockup">
+            <span class="brand-mark">R</span>
+            <span class="brand-wordmark">Releva <em>Feed</em></span>
+        </a>
+        <details class="mobile-account-menu">
+            <summary class="user-avatar user-avatar-sm">{{ $userInitial }}<span class="sr-only">Abrir menu da conta</span></summary>
+            <div class="mobile-account-popover">
+                <p>{{ auth()->user()->name }}</p>
+                <a href="{{ route('preferences.index') }}">Preferências</a>
+                <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit">Sair</button></form>
+            </div>
+        </details>
     </header>
 
-    <main>{{ $slot }}</main>
+    <main class="app-content">{{ $slot }}</main>
+
+    <nav class="mobile-bottom-nav" aria-label="Navegação mobile">
+        <a href="{{ route('dashboard') }}" @class(['mobile-nav-link', 'is-active' => request()->routeIs('dashboard')])>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="m3 10.7 9-7.2 9 7.2v8.1a2.2 2.2 0 0 1-2.2 2.2H5.2A2.2 2.2 0 0 1 3 18.8v-8.1Z" stroke="currentColor" stroke-width="1.8"/><path d="M9.2 21v-6.2h5.6V21" stroke="currentColor" stroke-width="1.8"/></svg><span>Feed</span>
+        </a>
+        <a href="{{ route('radar') }}" @class(['mobile-nav-link', 'is-active' => request()->routeIs('radar')])>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.7" stroke="currentColor" stroke-width="1.8"/><path d="m12 12 5.3-5.3M12 8.5v3.6h3.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/></svg><span>Radar</span>
+        </a>
+        <a href="{{ route('my-sources.index') }}" @class(['mobile-nav-link', 'is-active' => request()->routeIs('my-sources.index') || request()->routeIs('sources.*')])>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M4 7.4A2.4 2.4 0 0 1 6.4 5h11.2A2.4 2.4 0 0 1 20 7.4v9.2a2.4 2.4 0 0 1-2.4 2.4H6.4A2.4 2.4 0 0 1 4 16.6V7.4Z" stroke="currentColor" stroke-width="1.8"/><path d="M8 9h8M8 13h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Fontes</span>
+        </a>
+        <a href="{{ route('preferences.index') }}" @class(['mobile-nav-link', 'is-active' => request()->routeIs('preferences.*') || request()->routeIs('my-topics.*')])>
+            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.1" stroke="currentColor" stroke-width="1.8"/><path d="M5.3 19.4a6.7 6.7 0 0 1 13.4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Perfil</span>
+        </a>
+    </nav>
     @livewireScripts
 </body>
 </html>

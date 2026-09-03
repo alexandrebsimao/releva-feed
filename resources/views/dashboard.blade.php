@@ -1,121 +1,100 @@
 <x-layouts.authenticated>
-    <section class="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12 lg:py-16">
-        <div>
-            <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-600">Sua leitura</p>
-            <h1 class="mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">Meu feed</h1>
-            <p class="mt-3 max-w-2xl text-slate-500">Escolha se quer ver todos os artigos, as suas fontes ou apenas os assuntos que acompanha.</p>
-        </div>
+    @php
+        $firstName = explode(' ', trim(auth()->user()->name))[0];
+        $userInitial = strtoupper(substr(trim(auth()->user()->name), 0, 1));
+        $sourceStoryColors = ['violet', 'blue', 'orange', 'green', 'pink', 'gold'];
+    @endphp
 
-        <nav class="sticky top-0 z-30 -mx-4 mt-8 flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-slate-100/95 p-2 shadow-sm backdrop-blur sm:-mx-6 sm:mt-10" aria-label="Filtro do feed">
-            @foreach (['all' => 'Todos', 'sources' => 'Minhas fontes', 'interests' => 'Meus interesses'] as $feedMode => $label)
-                <a href="{{ route('dashboard', ['view' => $feedMode]) }}" @class([
-                    'rounded-xl px-4 py-2.5 text-sm font-semibold transition',
-                    'bg-slate-950 text-white' => $mode === $feedMode,
-                    'text-slate-600 hover:bg-slate-100 hover:text-slate-950' => $mode !== $feedMode,
-                ])>{{ $label }}</a>
-            @endforeach
-        </nav>
-
-        <div class="mt-3">
-            @include('shared.source-filter', [
-                'filterAction' => route('dashboard', ['view' => $mode]),
-                'sources' => $sources,
-                'selectedSourceIds' => $selectedSourceIds,
-                'categories' => $categories,
-                'selectedCategory' => $selectedCategory,
-            ])
-        </div>
-
-        <section @if (! $articles->isEmpty()) data-infinite-feed @endif class="mt-5 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div class="flex flex-col justify-between gap-4 border-b border-slate-100 px-6 py-6 sm:flex-row sm:items-center">
-                <div class="min-w-0">
-                    @if ($mode === 'all')
-                        <p class="text-sm font-medium text-slate-500">Visão completa</p>
-                        <h2 class="mt-1 text-2xl font-semibold text-slate-950">Todos os artigos</h2>
-                    @elseif ($mode === 'sources')
-                        <p class="text-sm font-medium text-slate-500">{{ $selectedSourceCount }} {{ $selectedSourceCount === 1 ? 'fonte selecionada' : 'fontes selecionadas' }}</p>
-                        <h2 class="mt-1 text-2xl font-semibold text-slate-950">Artigos das minhas fontes</h2>
-                    @else
-                        <p class="text-sm font-medium text-slate-500">Atualizado pelos seus assuntos</p>
-                        <h2 class="mt-1 text-2xl font-semibold text-slate-950">Artigos relevantes para você</h2>
-                    @endif
-                </div>
-                <div class="flex flex-wrap gap-2">
-                    @if ($mode === 'interests')
-                        <a href="{{ route('preferences.index') }}" class="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">Ajustar preferências</a>
-                    @elseif ($mode === 'sources')
-                        <a href="{{ route('sources.index') }}" class="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-semibold text-white hover:bg-slate-800">Gerenciar fontes</a>
-                    @endif
-                </div>
+    <section class="feed-page">
+        <header class="feed-page-header">
+            <div>
+                <p class="eyebrow">Seu radar · {{ now()->locale('pt_BR')->translatedFormat('l, j \d\e F') }}</p>
+                <h1>Bom dia, {{ $firstName }} <span aria-hidden="true">✦</span></h1>
+                <p class="feed-intro">Uma seleção com contexto para você começar bem o dia.</p>
             </div>
-            @if ($articles->isEmpty())
-                <div class="px-6 py-14 text-center">
-                    @if ($mode === 'sources')
-                        <h3 class="text-lg font-semibold text-slate-900">Nenhum artigo das suas fontes</h3>
-                        <p class="mt-2 text-sm text-slate-500">Selecione uma fonte ou aguarde a próxima coleta de RSS.</p>
-                        <a href="{{ route('sources.index') }}" class="mt-5 inline-flex rounded-xl bg-amber-300 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-amber-200">Escolher fontes</a>
-                    @elseif ($mode === 'interests')
-                        <h3 class="text-lg font-semibold text-slate-900">Seu feed ainda está vazio</h3>
-                        <p class="mt-2 text-sm text-slate-500">Acompanhe um assunto para começar a receber artigos relevantes.</p>
-                        <a href="{{ route('preferences.index') }}" class="mt-5 inline-flex rounded-xl bg-amber-300 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-amber-200">Escolher interesses</a>
-                    @else
-                        <h3 class="text-lg font-semibold text-slate-900">Nenhum artigo importado</h3>
-                        <p class="mt-2 text-sm text-slate-500">Aguarde a coleta dos feeds para começar a visualizar artigos.</p>
-                    @endif
-                </div>
-            @else
-                <div data-feed-list class="divide-y divide-slate-100">
-                    @php($renderedClusters = [])
-                    @foreach ($articles as $article)
-                        @foreach ($article->clusters as $cluster)
-                            @if (! in_array($cluster->id, $renderedClusters, true))
-                                @php($renderedClusters[] = $cluster->id)
-                                @php($clusterTopics = $cluster->articles->flatMap->topics->unique('id')->take(3))
-                                @php($clusterSources = $cluster->articles->map(fn ($clusterArticle) => $clusterArticle->feed?->source?->name)->filter()->unique()->values())
-                                <article data-feed-item-key="cluster-{{ $cluster->id }}" class="px-4 py-6 transition hover:bg-slate-50 sm:px-6 sm:py-7">
-                                    <div class="flex flex-wrap items-center gap-3 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
-                                        <span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-800">Acontecimento</span>
-                                        @php($clusterDate = $cluster->last_article_at ?? $cluster->published_at)
-                                        @if ($clusterDate)<time datetime="{{ $clusterDate->timezone(config('app.timezone'))->toIso8601String() }}">{{ $clusterDate->timezone(config('app.timezone'))->format('d/m/Y H:i') }}</time>@endif
-                                    </div>
-                                    <h3 class="mt-4 text-2xl font-semibold leading-tight tracking-tight text-slate-950">{{ $cluster->title }}</h3>
-                                    @if ($cluster->summary)<p class="mt-3 max-w-4xl text-sm leading-7 text-slate-600">{{ $cluster->summary }}</p>@endif
-                                    @if ($cluster->why_it_matters)<p class="mt-4 max-w-3xl border-l-2 border-amber-300 pl-3 text-sm leading-6 text-slate-600"><span class="font-semibold text-slate-800">Por que importa:</span> {{ $cluster->why_it_matters }}</p>@endif
-                                    @if ($clusterTopics->isNotEmpty())
-                                        <div class="mt-4 flex flex-wrap gap-2">
-                                            @foreach ($clusterTopics as $topic)
-                                                <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">{{ $topic->name }}</span>
-                                            @endforeach
-                                        </div>
-                                    @endif
-                                    <div class="mt-5 flex flex-col gap-3 border-t border-slate-100 pt-4 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-                                        <div><p>{{ $clusterSources->take(3)->implode(' · ') }}</p><p class="mt-1 text-xs text-slate-400">{{ $clusterSources->count() }} {{ $clusterSources->count() === 1 ? 'fonte' : 'fontes' }}</p></div>
-                                        <a href="{{ route('news.show', $cluster) }}" class="shrink-0 font-semibold text-amber-700 hover:text-amber-600">Ver detalhes →</a>
-                                    </div>
-                                </article>
-                            @endif
-                        @endforeach
-                        @if ($article->clusters->isEmpty())
-                            <article data-feed-item-key="article-{{ $article->id }}" class="px-4 py-6 transition hover:bg-slate-50 sm:px-6">
-                                <a href="{{ $article->url }}" target="_blank" rel="noopener noreferrer" class="text-lg font-semibold leading-7 text-slate-900 hover:text-amber-700">{{ $article->original_title }}</a>
-                                <p class="mt-2 text-sm text-slate-500">{{ $article->feed->source->name }} · {{ $article->feed->name }}</p>
-                                @if ($article->published_at)
-                                    <time datetime="{{ $article->published_at->timezone(config('app.timezone'))->toIso8601String() }}" class="mt-2 block text-xs text-slate-400">Publicado {{ $article->published_at->timezone(config('app.timezone'))->format('d/m/Y H:i') }}</time>
-                                @elseif ($article->imported_at)
-                                    <time datetime="{{ $article->imported_at->timezone(config('app.timezone'))->toIso8601String() }}" class="mt-2 block text-xs text-slate-400">Importado {{ $article->imported_at->timezone(config('app.timezone'))->format('d/m/Y H:i') }}</time>
-                                @endif
-                                @if ($mode === 'interests')<p class="mt-2 text-xs font-medium text-slate-400">Relevância para você: {{ $article->user_relevance_score }}/100</p>@endif
-                                @if ($article->description)<p class="mt-3 max-w-4xl text-sm leading-6 text-slate-600">{{ \Illuminate\Support\Str::limit($article->description, 240) }}</p>@endif
-                                <div class="mt-4 flex flex-wrap gap-2">@foreach ($article->topics as $topic)<span class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">{{ $topic->name }}</span>@endforeach</div>
-                            </article>
-                        @endif
-                    @endforeach
-                </div>
-                @if ($articles->hasPages())
-                    <div data-feed-pagination class="border-t border-slate-200 px-6 py-4">{{ $articles->links() }}</div>
-                    <div data-feed-sentinel class="px-6 py-5 text-center text-sm text-slate-400" aria-live="polite">Role para carregar mais.</div>
-                @endif
-            @endif
+            <div class="feed-header-stat"><span class="stat-dot"></span><span><strong>{{ $articles->total() }}</strong> leituras no radar</span></div>
+        </header>
+
+        <section class="source-stories" aria-labelledby="fontes-em-foco">
+            <div class="section-label-row"><h2 id="fontes-em-foco">Fontes em foco</h2><a href="{{ route('my-sources.index') }}">Ver todas</a></div>
+            <div class="story-list">
+                @forelse ($sources->take(6) as $index => $source)
+                    @php($storyInitial = strtoupper(substr(trim($source->name), 0, 1)))
+                    <a href="{{ route('dashboard', ['view' => 'sources', 'sources[]' => $source->id]) }}" class="story-item"><span class="story-ring story-ring-{{ $sourceStoryColors[$index % count($sourceStoryColors)] }}"><span>{{ $storyInitial }}</span></span><span>{{ \Illuminate\Support\Str::limit($source->name, 14) }}</span></a>
+                @empty
+                    <p class="empty-inline">Suas fontes aparecerão aqui quando estiverem selecionadas.</p>
+                @endforelse
+            </div>
         </section>
+
+        <div class="feed-layout">
+            <div class="feed-column">
+                <div class="feed-toolbar">
+                    <nav class="feed-tabs" aria-label="Modo de leitura">
+                        @foreach (['interests' => 'Para você', 'all' => 'Todos', 'sources' => 'Minhas fontes'] as $feedMode => $label)
+                            <a href="{{ route('dashboard', ['view' => $feedMode]) }}" @class(['feed-tab', 'is-active' => $mode === $feedMode])>{{ $label }}</a>
+                        @endforeach
+                    </nav>
+                    <button type="button" class="toolbar-icon" aria-label="Atualizar feed" onclick="window.location.reload()"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M19.3 8.3A8 8 0 1 0 20 12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M20 4.5v4.8h-4.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+                </div>
+
+                <div class="feed-filter-wrap">
+                    @include('shared.source-filter', ['filterAction' => route('dashboard', ['view' => $mode]), 'sources' => $sources, 'selectedSourceIds' => $selectedSourceIds, 'categories' => $categories, 'selectedCategory' => $selectedCategory])
+                </div>
+
+                <section @if (! $articles->isEmpty()) data-infinite-feed @endif class="feed-stream" aria-label="Artigos do seu feed">
+                    @if ($articles->isEmpty())
+                        <div class="feed-empty"><span class="feed-empty-icon">✦</span><h2>Seu radar está quieto</h2><p>Escolha alguns assuntos ou fontes para receber uma leitura mais sua.</p><a href="{{ route('preferences.index') }}" class="primary-action">Personalizar feed</a></div>
+                    @else
+                        <div data-feed-list class="feed-list">
+                            @php($renderedClusters = [])
+                            @foreach ($articles as $article)
+                                @foreach ($article->clusters as $cluster)
+                                    @if (! in_array($cluster->id, $renderedClusters, true))
+                                        @php($renderedClusters[] = $cluster->id)
+                                        @php($clusterTopics = $cluster->articles->flatMap->topics->unique('id')->take(3))
+                                        @php($clusterSources = $cluster->articles->map(fn ($clusterArticle) => $clusterArticle->feed?->source?->name)->filter()->unique()->values())
+                                        @php($clusterSource = $clusterSources->first() ?: 'Releva Feed')
+                                        @php($clusterInitial = strtoupper(substr(trim($clusterSource), 0, 1)))
+                                        @php($clusterDate = $cluster->last_article_at ?? $cluster->published_at)
+                                        <article data-feed-item-key="cluster-{{ $cluster->id }}" class="feed-card">
+                                            <div class="feed-card-header"><span class="source-avatar source-avatar-{{ $cluster->id % 5 }}">{{ $clusterInitial }}</span><div class="feed-card-author"><strong>{{ $clusterSource }}</strong><span>{{ $cluster->category ?: 'Acontecimento' }} · {{ $clusterDate?->locale('pt_BR')->translatedFormat('j \d\e F') }}</span></div><span class="feed-more" aria-hidden="true">•••</span></div>
+                                            <a href="{{ route('news.show', $cluster) }}" class="feed-visual feed-visual-{{ $cluster->id % 4 }}"><span class="feed-visual-kicker">Releva / em contexto</span><span class="feed-visual-title">{{ $cluster->title }}</span><span class="feed-visual-mark">R</span></a>
+                                            <div class="feed-card-body">
+                                                <div class="feed-action-row"><div class="feed-actions"><button type="button" data-save-item aria-label="Salvar acontecimento"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M6.5 4.5A2 2 0 0 1 8.5 2.5h7a2 2 0 0 1 2 2v17l-5.5-3.7-5.5 3.7v-17Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button><a href="{{ route('news.show', $cluster) }}" aria-label="Abrir acontecimento"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M4 12h15M13 6l6 6-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a></div>@if ($cluster->general_score !== null)<span class="relevance-score">{{ $cluster->general_score }}% relevância</span>@endif</div>
+                                                <h2><a href="{{ route('news.show', $cluster) }}">{{ $cluster->title }}</a></h2>
+                                                @if ($cluster->summary)<p class="feed-summary">{{ $cluster->summary }}</p>@endif
+                                                @if ($cluster->why_it_matters)<p class="why-it-matters"><strong>Por que importa</strong> {{ $cluster->why_it_matters }}</p>@endif
+                                                @if ($clusterTopics->isNotEmpty())<div class="topic-pills">@foreach ($clusterTopics as $topic)<span>{{ $topic->name }}</span>@endforeach</div>@endif
+                                                <div class="feed-card-footer"><span>{{ $clusterSources->count() }} {{ $clusterSources->count() === 1 ? 'fonte' : 'fontes' }} · {{ $cluster->articles->count() }} {{ $cluster->articles->count() === 1 ? 'matéria' : 'matérias' }}</span><a href="{{ route('news.show', $cluster) }}">Ler contexto <span aria-hidden="true">→</span></a></div>
+                                            </div>
+                                        </article>
+                                    @endif
+                                @endforeach
+                                @if ($article->clusters->isEmpty())
+                                    @php($articleSource = $article->feed?->source?->name ?: 'Fonte não identificada')
+                                    @php($articleInitial = strtoupper(substr(trim($articleSource), 0, 1)))
+                                    <article data-feed-item-key="article-{{ $article->id }}" class="feed-card">
+                                        <div class="feed-card-header"><span class="source-avatar source-avatar-{{ $article->id % 5 }}">{{ $articleInitial }}</span><div class="feed-card-author"><strong>{{ $articleSource }}</strong><span>Matéria recém-chegada</span></div><span class="feed-more" aria-hidden="true">•••</span></div>
+                                        <div class="feed-card-body feed-card-body-standalone"><div class="feed-action-row"><div class="feed-actions"><button type="button" data-save-item aria-label="Salvar matéria"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M6.5 4.5A2 2 0 0 1 8.5 2.5h7a2 2 0 0 1 2 2v17l-5.5-3.7-5.5 3.7v-17Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button></div></div>
+                                            <h2><a href="{{ $article->url }}" target="_blank" rel="noopener noreferrer">{{ $article->original_title }}</a></h2>
+                                            @if ($article->description)<p class="feed-summary">{{ \Illuminate\Support\Str::limit($article->description, 280) }}</p>@endif
+                                            <div class="feed-card-footer"><span>{{ $article->published_at?->locale('pt_BR')->translatedFormat('j \d\e F, H:i') ?: 'Importado recentemente' }}</span><a href="{{ $article->url }}" target="_blank" rel="noopener noreferrer">Abrir fonte <span aria-hidden="true">↗</span></a></div>
+                                        </div>
+                                    </article>
+                                @endif
+                            @endforeach
+                        </div>
+                        @if ($articles->hasPages())<div data-feed-pagination class="feed-pagination">{{ $articles->links() }}</div><div data-feed-sentinel class="feed-sentinel" aria-live="polite">Role para carregar mais</div>@endif
+                    @endif
+                </section>
+            </div>
+
+            <aside class="feed-aside">
+                <div class="profile-card"><div class="profile-card-top"><span class="user-avatar user-avatar-lg">{{ $userInitial }}</span><div><strong>{{ auth()->user()->name }}</strong><span>Leitor em construção</span></div></div><div class="profile-stats"><span><strong>{{ $sources->count() }}</strong> fontes</span><span><strong>{{ $articles->total() }}</strong> leituras</span></div><a href="{{ route('preferences.index') }}" class="profile-link">Editar preferências</a></div>
+                <div class="aside-section"><div class="aside-title"><span>Sugestões para você</span><a href="{{ route('preferences.index') }}">Ver tudo</a></div><p class="aside-note">Acompanhe assuntos que combinam com o seu radar.</p><a href="{{ route('my-topics.index') }}" class="suggestion-row"><span class="suggestion-icon">#</span><span><strong>Descobrir assuntos</strong><small>Personalize sua curadoria</small></span><span class="suggestion-arrow">→</span></a></div>
+                <p class="aside-footer">RELEVA FEED · LEITURA COM CONTEXTO</p>
+            </aside>
+        </div>
     </section>
 </x-layouts.authenticated>
