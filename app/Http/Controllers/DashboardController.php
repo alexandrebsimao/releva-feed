@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Article;
 use App\Services\News\UserRelevanceCalculator;
 use App\Services\Topic\UserTopicPreferenceService;
 use App\Support\SourceSelection;
@@ -15,26 +16,80 @@ class DashboardController extends Controller
         UserTopicPreferenceService $preferences,
         UserRelevanceCalculator $relevance,
     ): View {
+        return $this->feed($request, $preferences, $relevance, $this->mode($request));
+    }
+
+    public function sources(
+        Request $request,
+        UserTopicPreferenceService $preferences,
+        UserRelevanceCalculator $relevance,
+    ): View {
+        return $this->feed($request, $preferences, $relevance, 'sources');
+    }
+
+    private function feed(
+        Request $request,
+        UserTopicPreferenceService $preferences,
+        UserRelevanceCalculator $relevance,
+        string $mode,
+    ): View {
+        $articles = match ($mode) {
+            'all' => Article::query(),
+            'sources' => $this->sourcesQuery(),
+            default => $preferences->radarQuery(auth()->user()),
+        };
+
         $selectedSourceIds = SourceSelection::fromRequest($request);
-        $articles = $preferences->radarQuery(auth()->user())
-            ->when($selectedSourceIds !== [], fn ($query) => $query->whereHas(
-                'feed',
-                fn ($feedQuery) => $feedQuery->whereIn('source_id', $selectedSourceIds),
-            ))
-            ->with(['feed.source', 'topics', 'clusters'])
+        $articles->when(
+            $selectedSourceIds !== [],
+            fn ($query) => $query->whereHas('feed', fn ($feedQuery) => $feedQuery->whereIn('source_id', $selectedSourceIds)),
+        );
+
+        $articles = $articles
+            ->with(['feed.source', 'topics', 'clusters.articles.feed.source', 'clusters.articles.topics'])
             ->orderByDesc('published_at')
             ->orderByDesc('imported_at')
             ->paginate(10)
             ->withQueryString();
-        $sources = SourceSelection::options();
-        $articles->getCollection()->transform(function ($article) use ($relevance) {
-            $cluster = $article->clusters->first();
-            $scoreSubject = $cluster ?? $article;
-            $article->setAttribute('user_relevance_score', $relevance->calculate(auth()->user(), $scoreSubject));
 
-            return $article;
-        });
+        if ($mode === 'interests') {
+            $articles->getCollection()->transform(function ($article) use ($relevance) {
+                $cluster = $article->clusters->first();
+                $scoreSubject = $cluster ?? $article;
+                $article->setAttribute('user_relevance_score', $relevance->calculate(auth()->user(), $scoreSubject));
 
-        return view('dashboard', compact('articles', 'sources', 'selectedSourceIds'));
+                return $article;
+            });
+        }
+
+        return view('dashboard', [
+            'articles' => $articles,
+            'mode' => $mode,
+            'sources' => SourceSelection::options(),
+            'selectedSourceIds' => $selectedSourceIds,
+            'selectedSourceCount' => auth()->user()->sources()->where('sources.active', true)->count(),
+        ]);
+    }
+
+    private function mode(Request $request): string
+    {
+        $mode = $request->query('view', 'interests');
+
+        return is_string($mode) && in_array($mode, ['all', 'sources', 'interests'], true)
+            ? $mode
+            : 'interests';
+    }
+
+    private function sourcesQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        $sourceIds = auth()->user()->sources()
+            ->where('sources.active', true)
+            ->pluck('sources.id');
+
+        return Article::query()->when(
+            $sourceIds->isEmpty(),
+            fn ($query) => $query->whereRaw('1 = 0'),
+            fn ($query) => $query->whereHas('feed', fn ($feedQuery) => $feedQuery->whereIn('source_id', $sourceIds)),
+        );
     }
 }

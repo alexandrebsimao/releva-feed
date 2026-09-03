@@ -128,13 +128,17 @@ class FeedController extends Controller
                 $suffix++;
             }
 
-            return Source::create([
+            $source = Source::create([
                 'name' => $name,
                 'slug' => $slug,
                 'domain' => $domain,
                 'priority' => 0,
                 'active' => true,
             ]);
+
+            auth()->user()->sources()->syncWithoutDetaching([$source->id]);
+
+            return $source;
         }
 
         return Source::query()->findOrFail((int) ($data['source_id'] ?? $fallback->id));

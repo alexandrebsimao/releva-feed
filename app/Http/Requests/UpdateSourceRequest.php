@@ -14,7 +14,12 @@ class UpdateSourceRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $this->merge(['active' => $this->boolean('active')]);
+        $source = $this->route('source');
+        $active = auth()->user()?->is_admin === true
+            ? $this->boolean('active')
+            : ($source instanceof \App\Models\Source ? $source->active : true);
+
+        $this->merge(['active' => $active]);
     }
 
     public function rules(): array

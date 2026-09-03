@@ -7,9 +7,7 @@ use App\AI\AiTasks;
 use App\AI\ArticleClassifier;
 use App\AI\FakeAiClient;
 use App\AI\NewsSummarizer;
-use App\AI\TopicCandidateMerger;
 use App\AI\TopicCatalog;
-use App\AI\TopicDetector;
 use App\Jobs\ProcessArticleJob;
 use App\Models\Article;
 use App\Models\Topic;
@@ -34,7 +32,7 @@ class ArticleProcessingJobTest extends TestCase
         ]);
     }
 
-    public function test_new_article_is_classified_detected_associated_and_marked_processed(): void
+    public function test_new_article_is_classified_associated_and_marked_processed(): void
     {
         $article = Article::factory()->create([
             'original_title' => 'Novo avanço na tecnologia brasileira',
@@ -46,9 +44,6 @@ class ArticleProcessingJobTest extends TestCase
                 'importance' => 85,
                 'is_news' => true,
                 'language' => 'pt-BR',
-            ],
-            AiTasks::TOPIC_DETECTOR => [
-                'topics' => [['name' => 'Tecnologia', 'type' => Topic::TYPE_TECHNOLOGY, 'confidence' => 0.95]],
             ],
             AiTasks::NEWS_SUMMARIZER => [
                 'title' => 'Toyota avança com tecnologia híbrida',
@@ -65,11 +60,12 @@ class ArticleProcessingJobTest extends TestCase
         $this->assertDatabaseHas('article_topic', [
             'article_id' => $article->id,
             'detected_by' => 'ai',
-            'confidence' => 0.95,
+            'confidence' => 0.8,
         ]);
+        $this->assertNotNull($article->fresh()->ai_classified_at);
         $this->assertDatabaseCount('news_clusters', 1);
         $this->assertDatabaseHas('cluster_article', ['article_id' => $article->id]);
-        $this->assertCount(3, $fake->calls());
+        $this->assertCount(2, $fake->calls());
     }
 
     public function test_processed_article_is_idempotent_and_does_not_call_ai_again(): void
@@ -159,9 +155,6 @@ class ArticleProcessingJobTest extends TestCase
             'is_news' => true,
             'language' => 'pt-BR',
         ]);
-        $fake->queueStructured(AiTasks::TOPIC_DETECTOR, [
-            'topics' => [['name' => 'Economia', 'type' => Topic::TYPE_TOPIC, 'confidence' => 0.9]],
-        ]);
         $fake->queueStructured(AiTasks::NEWS_SUMMARIZER, [
             'title' => 'Economia brasileira em destaque',
             'summary' => 'A notícia apresenta informações sobre a economia brasileira.',
@@ -188,8 +181,6 @@ class ArticleProcessingJobTest extends TestCase
         (new ProcessArticleJob($article->id))->handle(
             app(ArticleProcessingPreflight::class),
             app(ArticleClassifier::class),
-            app(TopicDetector::class),
-            app(TopicCandidateMerger::class),
             app(TopicCatalog::class),
             app(ClusterBuilder::class),
             app(NewsSummarizer::class),

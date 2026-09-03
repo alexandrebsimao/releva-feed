@@ -29,6 +29,10 @@ jobs:
 
             docker compose --env-file .env.production -f docker-compose-production.yml run --rm app php artisan migrate --force
             docker compose --env-file .env.production -f docker-compose-production.yml run --rm app php artisan db:seed --class=SourceCatalogSeeder --force
-            docker compose --env-file .env.production -f docker-compose-production.yml up -d
+            docker compose --env-file .env.production -f docker-compose-production.yml up -d --force-recreate app web queue scheduler
             docker compose --env-file .env.production -f docker-compose-production.yml exec -T app php artisan config:cache
+
+            releva_app_manifest=$(docker compose --env-file .env.production -f docker-compose-production.yml exec -T app sha256sum public/build/manifest.json | awk '{print $1}')
+            releva_web_manifest=$(docker compose --env-file .env.production -f docker-compose-production.yml exec -T web sha256sum /var/www/html/public/build/manifest.json | awk '{print $1}')
+            test "$releva_app_manifest" = "$releva_web_manifest"
             docker compose --env-file .env.production -f docker-compose-production.yml restart app queue scheduler

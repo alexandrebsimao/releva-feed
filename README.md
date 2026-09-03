@@ -171,9 +171,10 @@ Classificação de assuntos, agrupamento de acontecimentos, IA e e-mail diário 
 
 ## Sources e feeds
 
-Depois de entrar, acesse `/sources` para listar as fontes cadastradas, criar uma fonte ou editar uma existente. A edição de cada fonte também lista seus feeds e permite adicionar, editar ou remover cada um deles.
+Depois de entrar, acesse `/sources` para escolher as fontes que você deseja acompanhar. A lista principal mostra somente as fontes selecionadas pelo usuário; o catálogo abaixo permite pesquisar e adicionar fontes pré-cadastradas ou remover uma fonte da sua lista sem apagar o cadastro global. Caso a fonte não exista no catálogo, é possível cadastrá-la, e ela será selecionada automaticamente para o usuário que a criou. A edição de cada fonte também lista seus feeds e permite adicionar, editar ou remover cada um deles.
 
 O catálogo inicial de fontes e feeds fica no arquivo `database/data/source-catalog.csv` e é importado pelo `SourceCatalogSeeder`, chamado pelo `DatabaseSeeder`; use `php artisan db:seed` no ambiente local ou em produção. A importação é idempotente: fontes são identificadas pelo domínio e feeds pela URL, sem duplicação. No formulário de novo feed, um RSS pré-cadastrado pode ser buscado para preencher automaticamente nome, URL, categoria e fonte. A fonte também pode ser buscada no catálogo ou criada no próprio formulário. Uma fonte criada dessa forma é gravada na tabela principal `sources` dentro da mesma transação do feed.
+Administradores também possuem o catálogo em `/admin/sources`, onde podem cadastrar fontes, consultar seus RSS e ativar ou desativar fontes. Usuários comuns podem cadastrar uma fonte, mas não alteram seu status operacional.
 
 Feeds aceitam somente URLs válidas com os esquemas `http` ou `https`. A listagem de fontes mostra prioridade, quantidade de feeds, status e a última coleta bem sucedida.
 
@@ -209,7 +210,7 @@ Aliases são normalizados sem acentos, em minúsculas e com espaços consistente
 
 ## Preferências individuais
 
-Em `/my-topics`, cada usuário pode acompanhar ou excluir assuntos, remover uma preferência, pesquisar assuntos disponíveis e definir sua prioridade (baixa, normal ou alta). Uma notícia só entra no radar quando possui um assunto acompanhado; se também possuir qualquer assunto excluído pelo mesmo usuário, a exclusão tem precedência. Essa regra fica centralizada em `UserTopicPreferenceService` e também é usada pelo dashboard.
+Em `/preferences`, cada usuário encontra as configurações de **Assuntos** e **Fontes**. O `/dashboard` funciona como o **Meu feed** e permite alternar entre **Todos**, **Minhas fontes** e **Meus interesses**, além de filtrar por uma ou mais fontes. A visão por fontes mostra artigos de todas as fontes selecionadas pelo usuário, sem filtro por assunto; `/my-sources` permanece como URL compatível para abrir essa visão. Acontecimentos consolidados aparecem agrupados no próprio feed. Uma notícia só entra em **Meus interesses** quando possui um assunto acompanhado; se também possuir qualquer assunto excluído pelo mesmo usuário, a exclusão tem precedência. Essa regra fica centralizada em `UserTopicPreferenceService`.
 
 ## Decisões de versão
 

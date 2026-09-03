@@ -2,8 +2,8 @@
         <div class="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
             <div>
                 <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-600">Curadoria pessoal</p>
-                <h1 class="mt-3 text-4xl font-semibold tracking-tight text-slate-950">Meu Radar</h1>
-                <p class="mt-3 max-w-2xl text-slate-500">Acontecimentos consolidados pelos assuntos que você escolheu acompanhar.</p>
+                <h1 class="mt-3 text-4xl font-semibold tracking-tight text-slate-950">Acontecimentos</h1>
+                <p class="mt-3 max-w-2xl text-slate-500">Notícias agrupadas quando tratam do mesmo acontecimento.</p>
             </div>
         </div>
 

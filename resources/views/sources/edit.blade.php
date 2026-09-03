@@ -3,7 +3,11 @@
         <a href="{{ route('sources.index') }}" class="text-sm font-medium text-slate-500 hover:text-slate-950">← Voltar para fontes</a>
         <div class="mt-6 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
             <div><p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-600">Fonte</p><h1 class="mt-3 text-4xl font-semibold tracking-tight text-slate-950">{{ $source->name }}</h1><p class="mt-3 text-slate-500">Atualize os dados da fonte ou administre seus feeds.</p></div>
-            <form method="POST" action="{{ route('sources.destroy', $source) }}" onsubmit="return confirm('Remover esta fonte e seus feeds?')">@csrf @method('DELETE')<button class="rounded-xl px-4 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50">Remover fonte</button></form>
+            @if (auth()->user()?->is_admin === true)
+                <form method="POST" action="{{ route('sources.destroy', $source) }}" onsubmit="return confirm('Remover esta fonte e seus feeds?')">@csrf @method('DELETE')<button class="rounded-xl px-4 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50">Remover fonte</button></form>
+            @else
+                <form method="POST" action="{{ route('sources.deselect', $source) }}" onsubmit="return confirm('Remover esta fonte da sua lista?')">@csrf @method('DELETE')<button class="rounded-xl px-4 py-2.5 text-sm font-semibold text-rose-600 hover:bg-rose-50">Remover da minha lista</button></form>
+            @endif
         </div>
 
         @if (session('status'))<div class="mt-8 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">{{ session('status') }}</div>@endif

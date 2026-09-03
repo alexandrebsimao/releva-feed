@@ -24,7 +24,7 @@ class Article extends Model
     protected $fillable = [
         'feed_id', 'guid', 'url', 'canonical_url', 'original_title', 'description',
         'author', 'image_url', 'published_at', 'imported_at', 'content_hash',
-        'processing_status',
+        'processing_status', 'ai_classification', 'ai_classified_at', 'ai_last_error',
     ];
 
     protected function casts(): array
@@ -33,6 +33,8 @@ class Article extends Model
             'feed_id' => 'integer',
             'published_at' => 'datetime',
             'imported_at' => 'datetime',
+            'ai_classification' => 'array',
+            'ai_classified_at' => 'datetime',
         ];
     }
 

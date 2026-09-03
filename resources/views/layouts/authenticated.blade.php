@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ $title ?? 'Dashboard · '.config('app.name') }}</title>
+    <title>{{ $title ?? 'Meu feed · '.config('app.name') }}</title>
     @if (file_exists(public_path('hot')) || file_exists(public_path('build/manifest.json')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     @endif
@@ -17,13 +17,8 @@
                 <span>Releva Feed</span>
             </a>
             <div class="flex items-center gap-4 text-sm">
-                <a href="{{ route('dashboard') }}" class="hidden font-medium text-slate-600 transition hover:text-slate-950 sm:inline">Dashboard</a>
-                <a href="{{ route('sources.index') }}" class="hidden font-medium text-slate-600 transition hover:text-slate-950 sm:inline">Fontes</a>
-                <a href="{{ route('articles.index') }}" class="hidden font-medium text-slate-600 transition hover:text-slate-950 sm:inline">Artigos</a>
-                <a href="{{ route('radar') }}" class="hidden font-medium text-slate-600 transition hover:text-slate-950 sm:inline">Meu radar</a>
-                <a href="{{ route('topics.index') }}" class="hidden font-medium text-slate-600 transition hover:text-slate-950 sm:inline">Assuntos</a>
-                <a href="{{ route('my-topics.index') }}" class="hidden font-medium text-slate-600 transition hover:text-slate-950 sm:inline">Meus assuntos</a>
-                @can('admin')<a href="{{ route('admin.observability') }}" class="hidden font-medium text-slate-600 transition hover:text-slate-950 sm:inline">Administração</a>@endcan
+                <a href="{{ route('dashboard') }}" class="hidden font-medium text-slate-600 transition hover:text-slate-950 sm:inline">Meu feed</a>
+                <a href="{{ route('preferences.index') }}" class="hidden font-medium text-slate-600 transition hover:text-slate-950 sm:inline">Preferências</a>
                 <span class="hidden text-slate-500 sm:inline">{{ auth()->user()->name }}</span>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf

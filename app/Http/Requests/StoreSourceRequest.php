@@ -13,7 +13,7 @@ class StoreSourceRequest extends FormRequest
 
     protected function prepareForValidation(): void
     {
-        $this->merge(['active' => $this->boolean('active')]);
+        $this->merge(['active' => auth()->user()?->is_admin === true ? $this->boolean('active') : true]);
     }
 
     public function rules(): array

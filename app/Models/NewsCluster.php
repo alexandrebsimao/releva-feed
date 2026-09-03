@@ -25,6 +25,7 @@ class NewsCluster extends Model
     protected $fillable = [
         'slug', 'title', 'summary', 'why_it_matters', 'category',
         'importance_score', 'general_score', 'published_at', 'last_article_at',
+        'ai_summary_at', 'ai_last_error',
         'public_status',
     ];
 
@@ -35,6 +36,7 @@ class NewsCluster extends Model
             'general_score' => 'integer',
             'published_at' => 'datetime',
             'last_article_at' => 'datetime',
+            'ai_summary_at' => 'datetime',
         ];
     }
 

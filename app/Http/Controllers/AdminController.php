@@ -6,6 +6,7 @@ use App\Models\AiMetric;
 use App\Models\Article;
 use App\Models\Feed;
 use App\Models\NewsCluster;
+use App\Models\Source;
 use App\Services\Admin\AdminOperations;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
@@ -13,6 +14,26 @@ use Illuminate\View\View;
 
 class AdminController extends Controller
 {
+    public function sources(): View
+    {
+        $sources = Source::query()
+            ->with(['feeds:id,source_id,name,url,active'])
+            ->withCount('feeds')
+            ->orderByDesc('active')
+            ->orderByDesc('priority')
+            ->orderBy('name')
+            ->get();
+
+        return view('admin.sources.index', compact('sources'));
+    }
+
+    public function toggleSource(Source $source): RedirectResponse
+    {
+        $source->update(['active' => ! $source->active]);
+
+        return back()->with('status', 'Fonte '.($source->active ? 'ativada' : 'desativada').'.');
+    }
+
     public function index(): View
     {
         $feeds = Feed::query()

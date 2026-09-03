@@ -25,7 +25,11 @@
         @error('priority')<p class="mt-2 text-sm text-rose-600">{{ $message }}</p>@enderror
     </div>
     <div class="flex items-center sm:pt-8">
-        <label class="flex items-center gap-3 text-sm font-medium text-slate-700"><input type="checkbox" name="active" value="1" @checked(old('active', $source->exists ? $source->active : true)) class="rounded border-slate-300 text-amber-500 focus:ring-amber-300"> Fonte ativa</label>
+        @if (auth()->user()?->is_admin === true)
+            <label class="flex items-center gap-3 text-sm font-medium text-slate-700"><input type="checkbox" name="active" value="1" @checked(old('active', $source->exists ? $source->active : true)) class="rounded border-slate-300 text-amber-500 focus:ring-amber-300"> Fonte ativa</label>
+        @else
+            <p class="text-sm text-slate-500">O status da fonte é gerenciado pela administração.</p>
+        @endif
     </div>
 </div>
 

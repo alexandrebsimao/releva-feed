@@ -4,9 +4,7 @@ namespace App\Jobs;
 
 use App\AI\ArticleClassifier;
 use App\AI\NewsSummarizer;
-use App\AI\TopicCandidateMerger;
 use App\AI\TopicCatalog;
-use App\AI\TopicDetector;
 use App\Models\Article;
 use App\Models\Topic;
 use App\Services\Article\ArticleProcessingPreflight;
@@ -62,8 +60,6 @@ class ProcessArticleJob implements ShouldBeUnique, ShouldQueue
     public function handle(
         ArticleProcessingPreflight $preflight,
         ArticleClassifier $classifier,
-        TopicDetector $detector,
-        TopicCandidateMerger $merger,
         TopicCatalog $catalog,
         ClusterBuilder $clusterBuilder,
         NewsSummarizer $summarizer,
@@ -99,44 +95,46 @@ class ProcessArticleJob implements ShouldBeUnique, ShouldQueue
 
         try {
             $article->loadMissing('feed.source');
-            $existingTopics = Topic::query()->where('active', true)->get();
-            $classification = $classifier->classify(
-                $article->original_title,
-                $article->description,
-                $article->feed->source->name,
-                $article->published_at,
-                $existingTopics,
-            );
+            $classification = is_array($article->ai_classification)
+                ? $article->ai_classification
+                : $classifier->classify(
+                    $article->original_title,
+                    $article->description,
+                    $article->feed->source->name,
+                    $article->published_at,
+                    Topic::query()->where('active', true)->get(),
+                );
+
+            if ($article->ai_classification === null) {
+                $article->update([
+                    'ai_classification' => $classification,
+                    'ai_classified_at' => now(),
+                    'ai_last_error' => null,
+                ]);
+            }
 
             if (! $classification['is_news']) {
-                $article->update(['processing_status' => Article::STATUS_IGNORED]);
+                $article->update([
+                    'processing_status' => Article::STATUS_IGNORED,
+                    'ai_last_error' => null,
+                ]);
                 Log::info('Artigo ignorado por não ser notícia.', ['article_id' => $article->id]);
 
                 return;
             }
 
-            $detected = $detector->detect(
-                $article->original_title."\n\n".$article->description,
-                $existingTopics,
-            );
-            $topics = $merger->merge($classification['topics'], $detected['topics']);
+            $topics = $classification['topics'];
             $catalog->attachToArticle($article, $topics);
             $cluster = $clusterBuilder->build($article);
-            $summary = $summarizer->summarizeCluster($cluster);
-            $generalScore->calculateAndPersist($cluster->refresh());
-            $article->update(['processing_status' => Article::STATUS_PROCESSED]);
-            ($homepage ?? app(HomepageNewsService::class))->invalidate();
-
-            Log::info('Artigo processado por IA.', [
-                'article_id' => $article->id,
-                'topics_count' => count($topics),
-                'importance' => $classification['importance'],
-                'language' => $classification['language'],
-                'cluster_id' => $cluster->id,
-                'cluster_importance' => $summary['importance'],
+            $article->update([
+                'processing_status' => Article::STATUS_PROCESSED,
+                'ai_last_error' => null,
             ]);
         } catch (Throwable $exception) {
-            $article->newQuery()->whereKey($article->getKey())->update(['processing_status' => Article::STATUS_FAILED]);
+            $article->newQuery()->whereKey($article->getKey())->update([
+                'processing_status' => Article::STATUS_FAILED,
+                'ai_last_error' => $this->safeError($exception),
+            ]);
             Log::error('Falha no processamento de artigo; o job será re-tentado.', [
                 'article_id' => $article->id,
                 'exception' => $exception::class,
@@ -145,6 +143,35 @@ class ProcessArticleJob implements ShouldBeUnique, ShouldQueue
 
             throw $exception;
         }
+
+        $summary = null;
+
+        try {
+            $summary = $summarizer->summarizeCluster($cluster);
+            $generalScore->calculateAndPersist($cluster->refresh());
+        } catch (Throwable $exception) {
+            $cluster->newQuery()->whereKey($cluster->getKey())->update([
+                'ai_last_error' => $this->safeError($exception),
+            ]);
+            SummarizeClusterJob::dispatch($cluster->id);
+
+            Log::warning('Artigo processado, mas a sumarização foi adiada.', [
+                'article_id' => $article->id,
+                'cluster_id' => $cluster->id,
+                'exception' => $exception::class,
+            ]);
+        }
+
+        ($homepage ?? app(HomepageNewsService::class))->invalidate();
+
+        Log::info('Artigo processado por IA.', [
+            'article_id' => $article->id,
+            'topics_count' => count($topics),
+            'importance' => $classification['importance'],
+            'language' => $classification['language'],
+            'cluster_id' => $cluster->id,
+            'cluster_importance' => $summary['importance'] ?? null,
+        ]);
     }
 
     public function failed(?Throwable $exception): void

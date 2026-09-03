@@ -6,6 +6,7 @@ use App\Models\Article;
 use App\Models\NewsCluster;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use RuntimeException;
 
 class NewsSummarizer
@@ -30,7 +31,7 @@ class NewsSummarizer
         $response = $this->client->structured(
             AiTasks::NEWS_SUMMARIZER,
             <<<'INSTRUCTIONS'
-Você consolida matérias jornalísticas em português do Brasil. Use exclusivamente os fatos presentes nos artigos fornecidos. Não invente fatos, fontes, datas ou entidades. Se houver divergência relevante entre as fontes, preserve-a de forma objetiva no resumo. Gere um título objetivo, um resumo curto, uma explicação curta de por que o acontecimento importa e uma importância de 0 a 100. Responda somente no formato estruturado solicitado.
+    Você consolida matérias jornalísticas em português do Brasil. Use exclusivamente os fatos presentes nos artigos fornecidos. Não invente fatos, fontes, datas ou entidades. Se houver divergência relevante entre as fontes, preserve-a de forma objetiva no resumo. Gere um título objetivo, um resumo factual de no máximo 650 caracteres, uma explicação factual de no máximo 300 caracteres de por que o acontecimento importa e uma importância de 0 a 100. Responda somente no formato estruturado solicitado.
 INSTRUCTIONS,
             $this->prompt($articles),
             $this->model(),
@@ -57,12 +58,14 @@ INSTRUCTIONS,
             ];
         }
 
-        $summary = $this->summarize($cluster->articles);
+        $summary = $this->summarize($cluster->articles->take(max(1, (int) config('ai.cluster_article_limit', 6))));
         $cluster->update([
             'title' => $summary['title'],
             'summary' => $summary['summary'],
             'why_it_matters' => $summary['why_it_matters'],
             'importance_score' => $summary['importance'],
+            'ai_summary_at' => now(),
+            'ai_last_error' => null,
         ]);
 
         return $summary;
@@ -79,13 +82,13 @@ INSTRUCTIONS,
     private function prompt(Collection $articles): string
     {
         return json_encode([
-            'articles' => $articles->map(fn (Article|array $article): array => $article instanceof Article
+            'articles' => $articles->take(max(1, (int) config('ai.cluster_article_limit', 6)))->map(fn (Article|array $article): array => $article instanceof Article
                 ? $this->articlePayload($article)
                 : $this->arrayPayload($article))->values()->all(),
             'output_contract' => [
                 'title' => 'título objetivo em português do Brasil',
-                'summary' => 'resumo factual curto em português do Brasil',
-                'why_it_matters' => 'explicação curta e factual em português do Brasil',
+                'summary' => 'resumo factual curto em português do Brasil, com no máximo 650 caracteres',
+                'why_it_matters' => 'explicação curta e factual em português do Brasil, com no máximo 300 caracteres',
                 'importance' => 'inteiro entre 0 e 100',
             ],
         ], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
@@ -104,7 +107,7 @@ INSTRUCTIONS,
         return [
             'source' => $source,
             'original_title' => $article->original_title,
-            'description' => $article->description,
+            'description' => $this->excerpt($article->description),
             'date' => $article->published_at instanceof CarbonInterface
                 ? $article->published_at->toIso8601String()
                 : null,
@@ -124,7 +127,7 @@ INSTRUCTIONS,
         return [
             'source' => $source,
             'original_title' => $title,
-            'description' => isset($article['description']) ? (string) $article['description'] : null,
+            'description' => isset($article['description']) ? $this->excerpt((string) $article['description']) : null,
             'date' => isset($article['date']) ? (string) $article['date'] : null,
         ];
     }
@@ -138,5 +141,18 @@ INSTRUCTIONS,
         }
 
         return $model;
+    }
+
+    private function excerpt(?string $text): ?string
+    {
+        if ($text === null) {
+            return null;
+        }
+
+        $text = trim(preg_replace('/\s+/u', ' ', strip_tags($text)) ?? '');
+
+        return $text === ''
+            ? null
+            : Str::limit($text, max(200, (int) config('ai.cluster_article_max_chars', 3000)), '…');
     }
 }

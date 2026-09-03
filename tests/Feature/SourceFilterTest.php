@@ -92,6 +92,10 @@ class SourceFilterTest extends TestCase
             ->assertRedirect();
 
         $newSource = Source::query()->where('domain', 'nova-fonte.example.com')->firstOrFail();
+        $this->assertDatabaseHas('user_source_preferences', [
+            'user_id' => $user->id,
+            'source_id' => $newSource->id,
+        ]);
         $this->assertDatabaseHas('feeds', [
             'source_id' => $newSource->id,
             'name' => 'Feed novo',
@@ -112,6 +116,68 @@ class SourceFilterTest extends TestCase
             ->assertOk()
             ->assertJsonFragment(['name' => 'Jornal da Manhã', 'domain' => 'manha.example.com'])
             ->assertJsonMissing(['name' => 'Outro Jornal']);
+    }
+
+    public function test_user_can_view_a_feed_with_articles_from_selected_sources_only(): void
+    {
+        $user = User::factory()->create();
+        $selected = Source::factory()->create(['name' => 'Fonte acompanhada']);
+        $unselected = Source::factory()->create(['name' => 'Fonte não acompanhada']);
+        $user->sources()->attach($selected);
+
+        $selectedArticle = $this->articleFrom($selected, 'Artigo da fonte acompanhada');
+        $this->articleFrom($unselected, 'Artigo da fonte não acompanhada');
+
+        $this->actingAs($user)
+            ->get(route('my-sources.index'))
+            ->assertOk()
+            ->assertSee($selectedArticle->original_title)
+            ->assertDontSee('Artigo da fonte não acompanhada')
+            ->assertSee('Artigos das minhas fontes')
+            ->assertSee('Minhas fontes');
+    }
+
+    public function test_unified_feed_can_switch_between_all_articles_and_selected_sources(): void
+    {
+        $user = User::factory()->create();
+        $selected = Source::factory()->create();
+        $unselected = Source::factory()->create();
+        $user->sources()->attach($selected);
+
+        $this->articleFrom($selected, 'Artigo da fonte selecionada');
+        $this->articleFrom($unselected, 'Artigo da fonte não selecionada');
+
+        $this->actingAs($user)
+            ->get(route('dashboard', ['view' => 'all']))
+            ->assertOk()
+            ->assertSee('Artigo da fonte selecionada')
+            ->assertSee('Artigo da fonte não selecionada')
+            ->assertSee('Todos os artigos');
+
+        $this->actingAs($user)
+            ->get(route('dashboard', ['view' => 'sources']))
+            ->assertOk()
+            ->assertSee('Artigo da fonte selecionada')
+            ->assertDontSee('Artigo da fonte não selecionada')
+            ->assertSee('Artigos das minhas fontes');
+    }
+
+    public function test_my_feed_can_filter_articles_by_source_without_changing_the_feed_mode(): void
+    {
+        $user = User::factory()->create();
+        $firstSource = Source::factory()->create(['name' => 'Fonte filtrada']);
+        $secondSource = Source::factory()->create(['name' => 'Fonte ignorada']);
+        $this->articleFrom($firstSource, 'Artigo filtrado');
+        $this->articleFrom($secondSource, 'Artigo fora do filtro');
+
+        $this->actingAs($user)
+            ->get(route('dashboard', ['view' => 'all', 'sources' => [$firstSource->id]]))
+            ->assertOk()
+            ->assertSee('Artigo filtrado')
+            ->assertDontSee('Artigo fora do filtro')
+            ->assertSee('Todos os artigos')
+            ->assertSee('Filtrar por fonte')
+            ->assertSee('1 fonte selecionada');
     }
 
     private function articleFrom(Source $source, string $title): Article

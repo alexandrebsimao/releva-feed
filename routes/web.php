@@ -7,6 +7,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\HomepageController;
 use App\Http\Controllers\NewsClusterController;
+use App\Http\Controllers\PreferencesController;
 use App\Http\Controllers\SourceController;
 use App\Http\Controllers\TopicController;
 use App\Http\Controllers\UserTopicPreferenceController;
@@ -26,6 +27,8 @@ Route::middleware('auth')->group(function (): void {
     Route::get('/radar', Radar::class)->name('radar');
     Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
     Route::get('/articles', [ArticleController::class, 'index'])->name('articles.index');
+    Route::get('/my-sources', [DashboardController::class, 'sources'])->name('my-sources.index');
+    Route::get('/preferences', PreferencesController::class)->name('preferences.index');
     // Kept as a compatibility URL for links created before the public news URL.
     Route::get('/news-clusters/{newsCluster:slug}', [NewsClusterController::class, 'show'])->name('news-clusters.show');
     Route::get('/my-topics', [UserTopicPreferenceController::class, 'index'])->name('my-topics.index');
@@ -39,12 +42,16 @@ Route::middleware('auth')->group(function (): void {
     Route::resource('topics', TopicController::class)->except(['show']);
 
     Route::get('/sources/search', [SourceController::class, 'search'])->name('sources.search');
+    Route::post('/sources/{source}/select', [SourceController::class, 'select'])->name('sources.select');
+    Route::delete('/sources/{source}/select', [SourceController::class, 'deselect'])->name('sources.deselect');
     Route::resource('sources', SourceController::class)->except(['show']);
     Route::resource('sources.feeds', FeedController::class)
         ->only(['create', 'store', 'edit', 'update', 'destroy']);
 });
 
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function (): void {
+    Route::get('/sources', [AdminController::class, 'sources'])->name('sources.index');
+    Route::patch('/sources/{source}/toggle', [AdminController::class, 'toggleSource'])->name('sources.toggle');
     Route::get('/observability', [AdminController::class, 'index'])->name('observability');
     Route::post('/articles/{article}/reprocess', [AdminController::class, 'reprocessArticle'])->name('articles.reprocess');
     Route::post('/feeds/{feed}/retry', [AdminController::class, 'retryFeed'])->name('feeds.retry');

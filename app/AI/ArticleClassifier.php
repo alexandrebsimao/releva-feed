@@ -6,6 +6,7 @@ use App\Models\Article;
 use App\Models\Source;
 use App\Models\Topic;
 use Carbon\CarbonInterface;
+use Illuminate\Support\Str;
 use RuntimeException;
 
 class ArticleClassifier
@@ -26,7 +27,7 @@ class ArticleClassifier
     ): array {
         $response = $this->client->structured(
             AiTasks::ARTICLE_CLASSIFIER,
-            'Classifique a notícia. Use somente assuntos relevantes, não invente fatos e responda somente no formato estruturado solicitado.',
+            'Classifique a notícia. Use somente fatos explícitos no conteúdo. Prefira os assuntos existentes quando houver correspondência, retorne no máximo 3 assuntos relevantes e não invente fatos. Responda somente no formato estruturado solicitado.',
             $this->prompt($title, $description, $source, $date, $existingTopics),
             $this->model(),
         );
@@ -48,6 +49,11 @@ class ArticleClassifier
         );
 
         $this->catalog->attachToArticle($article, $classification['topics']);
+        $article->update([
+            'ai_classification' => $classification,
+            'ai_classified_at' => now(),
+            'ai_last_error' => null,
+        ]);
 
         return $classification;
     }
@@ -62,12 +68,12 @@ class ArticleClassifier
     ): string {
         return json_encode([
             'title' => $title,
-            'description' => $description,
+            'description' => $this->excerpt($description, (int) config('ai.article_description_max_chars', 6000)),
             'source' => $source instanceof Source ? $source->name : $source,
             'date' => $date instanceof CarbonInterface ? $date->toIso8601String() : $date,
             'existing_relevant_topics' => $this->topicNames($existingTopics),
             'output_contract' => [
-                'topics' => [['name' => 'string', 'type' => 'topic|company|location|technology|person|product', 'confidence' => '0..1']],
+                'topics' => [['name' => 'string', 'type' => 'topic|company|location|technology|person|product', 'confidence' => '0..1 (no máximo 3)']],
                 'importance' => 'integer 0..100',
                 'is_news' => 'boolean',
                 'language' => 'BCP-47 language tag',
@@ -84,7 +90,18 @@ class ArticleClassifier
             $names[] = $topic instanceof Topic ? $topic->name : (string) $topic;
         }
 
-        return array_values(array_unique($names));
+        return array_slice(array_values(array_unique($names)), 0, max(1, (int) config('ai.max_existing_topics', 100)));
+    }
+
+    private function excerpt(?string $text, int $limit): ?string
+    {
+        if ($text === null) {
+            return null;
+        }
+
+        $text = trim(preg_replace('/\s+/u', ' ', strip_tags($text)) ?? '');
+
+        return $text === '' ? null : Str::limit($text, max(100, $limit), '…');
     }
 
     private function model(): string

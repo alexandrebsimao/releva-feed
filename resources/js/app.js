@@ -135,3 +135,84 @@ document.querySelectorAll('[data-feed-picker]').forEach((picker) => {
         }
     });
 });
+
+document.querySelectorAll('[data-infinite-feed]').forEach((feed) => {
+    const list = feed.querySelector('[data-feed-list]');
+    const pagination = feed.querySelector('[data-feed-pagination]');
+    const sentinel = feed.querySelector('[data-feed-sentinel]');
+    const nextLink = pagination?.querySelector('a[rel="next"]');
+
+    if (!list || !pagination || !sentinel || !nextLink || !('IntersectionObserver' in window)) {
+        return;
+    }
+
+    let nextUrl = nextLink.href;
+    let loading = false;
+
+    const loadNextPage = async () => {
+        if (loading || !nextUrl) {
+            return;
+        }
+
+        loading = true;
+        sentinel.textContent = 'Carregando mais artigos…';
+
+        try {
+            const response = await fetch(nextUrl, {
+                credentials: 'same-origin',
+                headers: {
+                    Accept: 'text/html',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+            });
+
+            if (!response.ok) {
+                throw new Error(`Feed request failed with status ${response.status}`);
+            }
+
+            const html = await response.text();
+            const documentFragment = new DOMParser().parseFromString(html, 'text/html');
+            const incomingList = documentFragment.querySelector('[data-feed-list]');
+            const incomingPagination = documentFragment.querySelector('[data-feed-pagination]');
+
+            if (!incomingList || !incomingPagination) {
+                throw new Error('Feed response did not contain the expected markup');
+            }
+
+            const existingKeys = new Set(
+                [...list.querySelectorAll('[data-feed-item-key]')].map((item) => item.dataset.feedItemKey),
+            );
+
+            [...incomingList.children].forEach((item) => {
+                const key = item.dataset.feedItemKey;
+
+                if (!key || !existingKeys.has(key)) {
+                    list.append(item);
+                    if (key) {
+                        existingKeys.add(key);
+                    }
+                }
+            });
+
+            const incomingNextLink = incomingPagination.querySelector('a[rel="next"]');
+            nextUrl = incomingNextLink?.href ?? '';
+            pagination.innerHTML = incomingPagination.innerHTML;
+            sentinel.textContent = nextUrl ? 'Role para carregar mais.' : 'Todos os artigos foram carregados.';
+        } catch (error) {
+            console.error(error);
+            sentinel.textContent = 'Não foi possível carregar mais artigos.';
+            pagination.classList.remove('hidden');
+        } finally {
+            loading = false;
+        }
+    };
+
+    pagination.classList.add('hidden');
+    const observer = new IntersectionObserver((entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+            loadNextPage();
+        }
+    }, { rootMargin: '600px 0px' });
+
+    observer.observe(sentinel);
+});

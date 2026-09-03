@@ -8,6 +8,7 @@ use App\Models\AiMetric;
 use App\Models\Article;
 use App\Models\Feed;
 use App\Models\NewsCluster;
+use App\Models\Source;
 use App\Models\User;
 use App\Services\AI\AiMetricRecorder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -22,6 +23,25 @@ class AdminObservabilityTest extends TestCase
     {
         $this->get(route('admin.observability'))->assertRedirect('/login');
         $this->actingAs(User::factory()->create())->get(route('admin.observability'))->assertForbidden();
+        $this->actingAs(User::factory()->create())->get(route('admin.sources.index'))->assertForbidden();
+    }
+
+    public function test_admin_can_view_and_toggle_source_catalog_status(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $source = Source::factory()->create(['name' => 'Fonte administrada', 'active' => true]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.sources.index'))
+            ->assertOk()
+            ->assertSee('Fonte administrada')
+            ->assertSee('Desativar fonte');
+
+        $this->actingAs($admin)
+            ->patch(route('admin.sources.toggle', $source))
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('sources', ['id' => $source->id, 'active' => false]);
     }
 
     public function test_admin_sees_feed_queue_cluster_and_ai_health_data_without_sensitive_fields(): void

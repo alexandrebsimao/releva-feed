@@ -79,6 +79,8 @@ class ClusterBuilder
             'summary' => null,
             'why_it_matters' => null,
             'importance_score' => null,
+            'ai_summary_at' => null,
+            'ai_last_error' => null,
         ]);
     }
 

@@ -39,6 +39,12 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
+    public function sources(): BelongsToMany
+    {
+        return $this->belongsToMany(Source::class, 'user_source_preferences')
+            ->withTimestamps();
+    }
+
     protected function casts(): array
     {
         return [
