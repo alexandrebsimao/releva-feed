@@ -27,7 +27,7 @@ class ArticleClassifier
     ): array {
         $response = $this->client->structured(
             AiTasks::ARTICLE_CLASSIFIER,
-            'Classifique a notícia. Use somente fatos explícitos no conteúdo. Prefira os assuntos existentes quando houver correspondência, retorne no máximo 3 assuntos relevantes e não invente fatos. Responda somente no formato estruturado solicitado.',
+            'Classifique a notícia. Use somente fatos explícitos no conteúdo. Inclua obrigatoriamente uma categoria editorial da lista fornecida, usando type="topic" e o nome canônico da categoria. Depois, acrescente até 2 assuntos específicos relevantes, como empresa, pessoa, produto, local ou tecnologia. Prefira os assuntos existentes quando houver correspondência, não invente fatos e responda somente no formato estruturado solicitado.',
             $this->prompt($title, $description, $source, $date, $existingTopics),
             $this->model(),
         );
@@ -72,8 +72,15 @@ class ArticleClassifier
             'source' => $source instanceof Source ? $source->name : $source,
             'date' => $date instanceof CarbonInterface ? $date->toIso8601String() : $date,
             'existing_relevant_topics' => $this->topicNames($existingTopics),
+            'editorial_categories' => collect(config('topics.editorial_categories', []))
+                ->map(fn (array $category): array => [
+                    'name' => $category['name'],
+                    'aliases' => $category['aliases'],
+                ])
+                ->values()
+                ->all(),
             'output_contract' => [
-                'topics' => [['name' => 'string', 'type' => 'topic|company|location|technology|person|product', 'confidence' => '0..1 (no máximo 3)']],
+                'topics' => [['name' => 'string', 'type' => 'topic|company|location|technology|person|product', 'confidence' => '0..1 (uma categoria editorial obrigatória + no máximo 2 assuntos específicos)']],
                 'importance' => 'integer 0..100',
                 'is_news' => 'boolean',
                 'language' => 'BCP-47 language tag',

@@ -56,17 +56,54 @@ class TopicCatalog
     /** @param list<array<string, mixed>> $topics */
     public function attachToArticle(Article $article, array $topics): void
     {
+        $article->loadMissing('feed');
+        $feedCategory = $this->editorialCategoryForFeed($article->feed?->category);
+
+        if ($feedCategory !== null && ! collect($topics)->contains(fn (array $topic): bool => $this->sameName($topic['name'], $feedCategory['name']))) {
+            array_unshift($topics, [
+                'name' => $feedCategory['name'],
+                'type' => Topic::TYPE_TOPIC,
+                'confidence' => 1.0,
+                'detected_by' => 'feed_category',
+            ]);
+        }
+
         DB::transaction(function () use ($article, $topics): void {
             foreach ($topics as $topicData) {
                 $topic = $this->resolveOrCreate($topicData);
                 $article->topics()->syncWithoutDetaching([
                     $topic->getKey() => [
                         'confidence' => $topicData['confidence'],
-                        'detected_by' => 'ai',
+                        'detected_by' => $topicData['detected_by'] ?? 'ai',
                     ],
                 ]);
             }
         });
+    }
+
+    /** @return array{name: string, slug: string}|null */
+    private function editorialCategoryForFeed(?string $feedCategory): ?array
+    {
+        $normalized = $this->normalizer->normalize((string) $feedCategory);
+
+        if ($normalized === '') {
+            return null;
+        }
+
+        foreach (config('topics.editorial_categories', []) as $category) {
+            $feedCategories = array_map(fn (string $value): string => $this->normalizer->normalize($value), $category['feed_categories']);
+
+            if (in_array($normalized, $feedCategories, true)) {
+                return $category;
+            }
+        }
+
+        return null;
+    }
+
+    private function sameName(string $first, string $second): bool
+    {
+        return $this->normalizer->normalize($first) === $this->normalizer->normalize($second);
     }
 
     private function uniqueSlug(string $name): string

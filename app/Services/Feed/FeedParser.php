@@ -198,7 +198,7 @@ class FeedParser
         }
 
         try {
-            return CarbonImmutable::parse($date);
+            return CarbonImmutable::parse($date)->setTimezone(config('app.timezone'));
         } catch (\Throwable) {
             return null;
         }

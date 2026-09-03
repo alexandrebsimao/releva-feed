@@ -11,6 +11,7 @@ use App\AI\RelevanceAnalyzer;
 use App\AI\TopicDetector;
 use App\Models\Article;
 use App\Models\Topic;
+use Database\Seeders\TopicCatalogSeeder;
 use App\Services\Topic\TopicNormalizer;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
@@ -146,5 +147,60 @@ class AIIntegrationTest extends TestCase
         $normalizer = app(TopicNormalizer::class);
 
         $this->assertSame('inteligencia artificial', $normalizer->normalize(' Inteligência-Artificial '));
+    }
+
+    public function test_topic_catalog_seeds_broad_editorial_categories_idempotently(): void
+    {
+        $article = Article::factory()->create();
+        $article->feed->update(['category' => 'economy']);
+
+        $this->seed(TopicCatalogSeeder::class);
+        $this->seed(TopicCatalogSeeder::class);
+
+        $this->assertDatabaseHas('topics', [
+            'name' => 'Economia',
+            'slug' => 'economia',
+            'type' => Topic::TYPE_TOPIC,
+            'status' => Topic::STATUS_APPROVED,
+            'active' => true,
+        ]);
+        $this->assertDatabaseHas('topics', ['name' => 'Política', 'slug' => 'politica']);
+        $this->assertDatabaseHas('topics', ['name' => 'Tecnologia', 'slug' => 'tecnologia']);
+        $this->assertDatabaseHas('topics', ['name' => 'Carros', 'slug' => 'carros']);
+        $this->assertDatabaseHas('topic_aliases', [
+            'name' => 'automotivo',
+            'normalized_name' => 'automotivo',
+        ]);
+        $this->assertSame(count(config('topics.editorial_categories')), Topic::query()->count());
+        $this->assertDatabaseHas('article_topic', [
+            'article_id' => $article->id,
+            'topic_id' => Topic::query()->where('slug', 'economia')->value('id'),
+            'detected_by' => 'feed_category',
+        ]);
+    }
+
+    public function test_feed_category_adds_a_broad_category_to_the_article_topics(): void
+    {
+        $article = Article::factory()->create();
+        $article->feed->update(['category' => 'economy']);
+        $fake = new FakeAiClient([
+            AiTasks::ARTICLE_CLASSIFIER => [
+                'topics' => [['name' => 'Taxa Selic', 'type' => Topic::TYPE_TOPIC, 'confidence' => 0.9]],
+                'importance' => 75,
+                'is_news' => true,
+                'language' => 'pt-BR',
+            ],
+        ]);
+        $this->app->instance(AiClient::class, $fake);
+
+        app(ArticleClassifier::class)->classifyAndPersist($article);
+
+        $economia = Topic::query()->where('slug', 'economia')->firstOrFail();
+        $this->assertDatabaseHas('article_topic', [
+            'article_id' => $article->id,
+            'topic_id' => $economia->id,
+            'detected_by' => 'feed_category',
+            'confidence' => 1,
+        ]);
     }
 }

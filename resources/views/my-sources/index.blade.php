@@ -38,7 +38,7 @@
                                     <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-500">Aguardando classificação</span>
                                 @endforelse
                             </div>
-                            <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-slate-400"><span>Publicado {{ $article->published_at->format('d/m/Y H:i') }}</span><span>Importado {{ $article->imported_at->format('d/m/Y H:i') }}</span>@if ($article->author)<span>Por {{ $article->author }}</span>@endif</div>
+                            <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-slate-400"><span>Publicado {{ $article->published_at->timezone(config('app.timezone'))->format('d/m/Y H:i') }}</span><span>Importado {{ $article->imported_at->timezone(config('app.timezone'))->format('d/m/Y H:i') }}</span>@if ($article->author)<span>Por {{ $article->author }}</span>@endif</div>
                         </article>
                     @endforeach
                 </div>

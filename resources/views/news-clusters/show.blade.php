@@ -26,7 +26,7 @@
                                 <a href="{{ $article->url }}" target="_blank" rel="noopener noreferrer" class="text-lg font-semibold leading-7 text-slate-900 hover:text-amber-700">{{ $article->original_title }}</a>
                                 <p class="mt-2 text-sm text-slate-500">{{ $article->feed->source->name }} · {{ $article->feed->name }}</p>
                             </div>
-                            <span class="shrink-0 text-xs text-slate-400">{{ $article->published_at->format('d/m/Y H:i') }}</span>
+                            <span class="shrink-0 text-xs text-slate-400">{{ $article->published_at->timezone(config('app.timezone'))->format('d/m/Y H:i') }}</span>
                         </div>
                         @if ($article->description)<p class="mt-3 max-w-4xl text-sm leading-6 text-slate-600">{{ $article->description }}</p>@endif
                         <div class="mt-4 flex flex-wrap gap-2">@foreach ($article->topics as $topic)<span class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">{{ $topic->name }}</span>@endforeach</div>

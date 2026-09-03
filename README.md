@@ -83,7 +83,7 @@ Suba a aplicação, o worker e o scheduler usando a configuração de produção
 docker compose --env-file .env.production -f docker-compose-production.yml build
 docker compose --env-file .env.production -f docker-compose-production.yml up -d postgres
 docker compose --env-file .env.production -f docker-compose-production.yml run --rm app php artisan migrate --force
-docker compose --env-file .env.production -f docker-compose-production.yml run --rm app php artisan db:seed --class=SourceCatalogSeeder --force
+docker compose --env-file .env.production -f docker-compose-production.yml run --rm app php artisan db:seed --class=DatabaseSeeder --force
 docker compose --env-file .env.production -f docker-compose-production.yml up -d
 ```
 
@@ -100,7 +100,16 @@ docker compose --env-file .env.production -f docker-compose-production.yml exec 
 docker compose --env-file .env.production -f docker-compose-production.yml restart app queue scheduler
 ```
 
-O workflow [deploy.yml](/Users/alexandreaugustobernssimao/Projects/releva-feed/.github/workflows/deploy.yml) segue o mesmo padrão do `naval-battle`: espera o projeto em `~/releva-feed/`, executa `git pull`, refaz o build, aplica migrations, atualiza o catálogo de fontes e sobe os serviços. Configure no GitHub os secrets `VPS_HOST`, `VPS_USERNAME`, `VPS_PASSWORD` e, opcionalmente, `VPS_PORT`. O arquivo `.env.production` deve existir somente na VPS.
+O workflow [deploy.yml](/Users/alexandreaugustobernssimao/Projects/releva-feed/.github/workflows/deploy.yml) segue o mesmo padrão do `naval-battle`: espera o projeto em `~/releva-feed/`, executa `git pull`, refaz o build, aplica migrations, atualiza os catálogos de fontes e assuntos e sobe os serviços. Configure no GitHub os secrets `VPS_HOST`, `VPS_USERNAME`, `VPS_PASSWORD` e, opcionalmente, `VPS_PORT`. O arquivo `.env.production` deve existir somente na VPS.
+
+Para executar o mesmo fluxo manualmente na VPS, use o script [`deploy.sh`](/Users/alexandreaugustobernssimao/Projects/releva-feed/deploy.sh):
+
+```bash
+chmod +x deploy.sh
+./deploy.sh
+```
+
+O script atualiza a branch `main`, valida `.env.production`, cria a rede `proxy` se necessário, constrói as imagens e assets, aplica migrations, atualiza o catálogo, recria os serviços, valida o manifest entre PHP-FPM e Nginx e reinicia os processos persistentes. Para disparar a coleta logo após o deploy, use `./deploy.sh --collect`. Por padrão o build usa `--no-cache`; para um deploy mais rápido mantendo o cache, use `./deploy.sh --cached`.
 
 Para importar imediatamente os artigos, dispare a coleta:
 
@@ -204,9 +213,9 @@ docker compose exec app php artisan articles:prune
 
 ## Topics e aliases
 
-A área autenticada `/topics` organiza assuntos por status: aprovados, sugeridos e ignorados. É possível criar, editar, aprovar e ignorar assuntos, além de cadastrar aliases como `IA`, `AI` e `Artificial Intelligence`.
+A área autenticada `/topics` organiza assuntos por status: aprovados, sugeridos e ignorados. O catálogo inicial inclui categorias editoriais amplas como Brasil, Economia, Política, Tecnologia, Carros, Esportes, Saúde, Ciência, Mundo e Cultura e entretenimento. É possível criar, editar, aprovar e ignorar assuntos, além de cadastrar aliases como `IA`, `AI` e `Artificial Intelligence`.
 
-Aliases são normalizados sem acentos, em minúsculas e com espaços consistentes. O vínculo entre artigos e assuntos fica na pivot `article_topic`, que preserva `confidence` e `detected_by` para a futura classificação automática, sem executar IA nesta etapa.
+Aliases são normalizados sem acentos, em minúsculas e com espaços consistentes. O classificador inclui uma categoria editorial ampla e pode complementar o artigo com assuntos específicos. Feeds com categoria conhecida também reforçam esse vínculo de forma determinística. O vínculo entre artigos e assuntos fica na pivot `article_topic`, que preserva `confidence` e `detected_by`.
 
 ## Preferências individuais
 

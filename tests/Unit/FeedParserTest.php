@@ -30,4 +30,23 @@ class FeedParserTest extends TestCase
         $this->assertSame('https://atom.example.com/entries/1?view=canonical', $items[0]['canonical_url']);
         $this->assertSame('Bruno Editor', $items[0]['author']);
     }
+
+    public function test_it_converts_feed_dates_to_the_application_timezone(): void
+    {
+        $items = app(FeedParser::class)->parse(<<<'XML'
+            <rss version="2.0">
+                <channel>
+                    <item>
+                        <guid>timezone-001</guid>
+                        <title>Notícia com fuso</title>
+                        <link>https://news.example.com/timezone</link>
+                        <pubDate>Tue, 08 Sep 2026 12:00:00 GMT</pubDate>
+                    </item>
+                </channel>
+            </rss>
+            XML, 'https://news.example.com/feed.xml');
+
+        $this->assertSame('2026-09-08 09:00:00', $items[0]['published_at']->format('Y-m-d H:i:s'));
+        $this->assertSame('America/Sao_Paulo', $items[0]['published_at']->getTimezone()->getName());
+    }
 }

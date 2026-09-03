@@ -5,7 +5,7 @@
         <article class="mt-8">
             <div class="flex flex-wrap items-center gap-3 text-xs font-semibold uppercase tracking-[0.18em] text-amber-300">
                 <span>{{ $newsCluster->category ?: 'Acontecimento' }}</span>
-                <span class="text-slate-500">{{ $newsCluster->published_at?->locale('pt_BR')->translatedFormat('j \d\e F \d\e Y, H:i') }}</span>
+                <span class="text-slate-500">{{ $newsCluster->published_at?->timezone(config('app.timezone'))->locale('pt_BR')->translatedFormat('j \d\e F \d\e Y, H:i') }}</span>
             </div>
             <h1 class="mt-5 max-w-4xl text-4xl font-semibold leading-tight tracking-tight text-white sm:text-6xl">{{ $newsCluster->title }}</h1>
 
@@ -43,7 +43,7 @@
                         <div class="min-w-0">
                             <p class="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">{{ $article->feed?->source?->name ?: 'Fonte não identificada' }}</p>
                             <h3 class="mt-2 text-lg font-semibold leading-7 text-white">{{ $article->original_title }}</h3>
-                            <p class="mt-2 text-sm text-slate-500">Publicado em {{ $article->published_at?->locale('pt_BR')->translatedFormat('j \d\e F \d\e Y, H:i') }}</p>
+                            <p class="mt-2 text-sm text-slate-500">Publicado em {{ $article->published_at?->timezone(config('app.timezone'))->locale('pt_BR')->translatedFormat('j \d\e F \d\e Y, H:i') }}</p>
                         </div>
                         @if (in_array($externalScheme, ['http', 'https'], true))
                             <a href="{{ $externalUrl }}" target="_blank" rel="noopener noreferrer" class="inline-flex shrink-0 items-center justify-center rounded-xl border border-white/15 px-4 py-2.5 text-sm font-semibold text-amber-300 transition hover:border-amber-300 hover:bg-amber-300/10">Ler fonte original ↗</a>

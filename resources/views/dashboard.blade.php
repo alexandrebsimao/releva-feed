@@ -74,7 +74,7 @@
                                     <div class="flex flex-wrap items-center gap-3 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
                                         <span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-800">Acontecimento</span>
                                         @php($clusterDate = $cluster->last_article_at ?? $cluster->published_at)
-                                        @if ($clusterDate)<time datetime="{{ $clusterDate->toIso8601String() }}">{{ $clusterDate->format('d/m/Y H:i') }}</time>@endif
+                                        @if ($clusterDate)<time datetime="{{ $clusterDate->timezone(config('app.timezone'))->toIso8601String() }}">{{ $clusterDate->timezone(config('app.timezone'))->format('d/m/Y H:i') }}</time>@endif
                                     </div>
                                     <h3 class="mt-4 text-2xl font-semibold leading-tight tracking-tight text-slate-950">{{ $cluster->title }}</h3>
                                     @if ($cluster->summary)<p class="mt-3 max-w-4xl text-sm leading-7 text-slate-600">{{ $cluster->summary }}</p>@endif
@@ -98,9 +98,9 @@
                                 <a href="{{ $article->url }}" target="_blank" rel="noopener noreferrer" class="text-lg font-semibold leading-7 text-slate-900 hover:text-amber-700">{{ $article->original_title }}</a>
                                 <p class="mt-2 text-sm text-slate-500">{{ $article->feed->source->name }} · {{ $article->feed->name }}</p>
                                 @if ($article->published_at)
-                                    <time datetime="{{ $article->published_at->toIso8601String() }}" class="mt-2 block text-xs text-slate-400">Publicado {{ $article->published_at->format('d/m/Y H:i') }}</time>
+                                    <time datetime="{{ $article->published_at->timezone(config('app.timezone'))->toIso8601String() }}" class="mt-2 block text-xs text-slate-400">Publicado {{ $article->published_at->timezone(config('app.timezone'))->format('d/m/Y H:i') }}</time>
                                 @elseif ($article->imported_at)
-                                    <time datetime="{{ $article->imported_at->toIso8601String() }}" class="mt-2 block text-xs text-slate-400">Importado {{ $article->imported_at->format('d/m/Y H:i') }}</time>
+                                    <time datetime="{{ $article->imported_at->timezone(config('app.timezone'))->toIso8601String() }}" class="mt-2 block text-xs text-slate-400">Importado {{ $article->imported_at->timezone(config('app.timezone'))->format('d/m/Y H:i') }}</time>
                                 @endif
                                 @if ($mode === 'interests')<p class="mt-2 text-xs font-medium text-slate-400">Relevância para você: {{ $article->user_relevance_score }}/100</p>@endif
                                 @if ($article->description)<p class="mt-3 max-w-4xl text-sm leading-6 text-slate-600">{{ \Illuminate\Support\Str::limit($article->description, 240) }}</p>@endif
