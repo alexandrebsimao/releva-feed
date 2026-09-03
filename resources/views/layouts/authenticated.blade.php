@@ -31,10 +31,6 @@
                 <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.7" stroke="currentColor" stroke-width="1.8"/><path d="m12 12 5.3-5.3M12 8.5v3.6h3.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/></svg>
                 <span>Acontecimentos</span>
             </a>
-            <a href="{{ route('my-sources.index') }}" @class(['sidebar-link', 'is-active' => request()->routeIs('my-sources.index') || request()->routeIs('sources.*')])>
-                <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M4 7.4A2.4 2.4 0 0 1 6.4 5h11.2A2.4 2.4 0 0 1 20 7.4v9.2a2.4 2.4 0 0 1-2.4 2.4H6.4A2.4 2.4 0 0 1 4 16.6V7.4Z" stroke="currentColor" stroke-width="1.8"/><path d="M8 9h8M8 13h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-                <span>Minhas fontes</span>
-            </a>
             <a href="{{ route('preferences.index') }}" @class(['sidebar-link', 'is-active' => request()->routeIs('preferences.*') || request()->routeIs('my-topics.*')])>
                 <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M12 3.6v2.1M12 18.3v2.1M20.4 12h-2.1M5.7 12H3.6M17.9 6.1l-1.5 1.5M7.6 16.4l-1.5 1.5M17.9 17.9l-1.5-1.5M7.6 7.6 6.1 6.1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="3.6" stroke="currentColor" stroke-width="1.8"/></svg>
                 <span>Preferências</span>
@@ -84,9 +80,6 @@
         </a>
         <a href="{{ route('radar') }}" @class(['mobile-nav-link', 'is-active' => request()->routeIs('radar')])>
             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8.7" stroke="currentColor" stroke-width="1.8"/><path d="m12 12 5.3-5.3M12 8.5v3.6h3.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="1.7" fill="currentColor"/></svg><span>Radar</span>
-        </a>
-        <a href="{{ route('my-sources.index') }}" @class(['mobile-nav-link', 'is-active' => request()->routeIs('my-sources.index') || request()->routeIs('sources.*')])>
-            <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M4 7.4A2.4 2.4 0 0 1 6.4 5h11.2A2.4 2.4 0 0 1 20 7.4v9.2a2.4 2.4 0 0 1-2.4 2.4H6.4A2.4 2.4 0 0 1 4 16.6V7.4Z" stroke="currentColor" stroke-width="1.8"/><path d="M8 9h8M8 13h5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Fontes</span>
         </a>
         <a href="{{ route('preferences.index') }}" @class(['mobile-nav-link', 'is-active' => request()->routeIs('preferences.*') || request()->routeIs('my-topics.*')])>
             <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="3.1" stroke="currentColor" stroke-width="1.8"/><path d="M5.3 19.4a6.7 6.7 0 0 1 13.4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span>Perfil</span>

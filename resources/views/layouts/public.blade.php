@@ -14,7 +14,7 @@
     @endif
     @livewireStyles
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen bg-slate-950 text-slate-100">
     <header class="border-b border-white/10">
         <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-5">
             <a href="{{ route('home') }}" class="flex items-center gap-3 text-lg font-semibold tracking-tight">
