@@ -26,7 +26,7 @@ RUN composer install --no-dev --no-interaction --prefer-dist --no-progress --no-
 
 COPY . .
 COPY --from=assets /app/public/build public/build
-RUN rm -f bootstrap/cache/*.php \
+RUN rm -f public/hot bootstrap/cache/*.php \
     && mkdir -p storage/framework/cache/data storage/framework/sessions storage/framework/views storage/logs bootstrap/cache \
     && composer dump-autoload --no-interaction --optimize --no-dev --no-scripts \
     && php artisan package:discover --ansi \

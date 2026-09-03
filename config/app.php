@@ -5,6 +5,8 @@ return [
     'env' => env('APP_ENV', 'production'),
     'debug' => (bool) env('APP_DEBUG', false),
     'url' => env('APP_URL', 'http://localhost'),
+    // Keep generated asset URLs on the public origin when TLS is terminated by the proxy.
+    'asset_url' => env('ASSET_URL', env('APP_URL', 'http://localhost')),
     'timezone' => 'America/Sao_Paulo',
     'locale' => env('APP_LOCALE', 'pt_BR'),
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'pt_BR'),

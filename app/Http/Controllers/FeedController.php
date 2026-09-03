@@ -19,12 +19,21 @@ class FeedController extends Controller
             'source' => $source,
             'feed' => new Feed(['active' => true]),
             'sources' => $this->sourceOptions($source),
+            'presetFeeds' => $this->presetFeedOptions(),
         ]);
     }
 
     public function store(StoreFeedRequest $request, Source $source): RedirectResponse
     {
         $data = $request->validated();
+
+        $existingFeed = Feed::query()->with('source')->where('url', $data['url'])->first();
+
+        if ($existingFeed !== null) {
+            return redirect()->route('sources.edit', $existingFeed->source)
+                ->with('status', 'Esse RSS já está cadastrado na fonte '.$existingFeed->source->name.'.');
+        }
+
         $targetSource = DB::transaction(function () use ($data, $source): Source {
             $targetSource = $this->resolveSource($data, $source);
             $targetSource->feeds()->create($this->feedData($data));
@@ -43,6 +52,7 @@ class FeedController extends Controller
             'source' => $source,
             'feed' => $feed,
             'sources' => $this->sourceOptions($source),
+            'presetFeeds' => $this->presetFeedOptions($feed),
         ]);
     }
 
@@ -79,6 +89,22 @@ class FeedController extends Controller
             ->where(fn ($query) => $query->where('active', true)->orWhereKey($selected->id))
             ->orderBy('name')
             ->get(['id', 'name', 'domain']);
+    }
+
+    private function presetFeedOptions(?Feed $selected = null): \Illuminate\Support\Collection
+    {
+        return Feed::query()
+            ->with(['source:id,name,domain'])
+            ->where(function ($query) use ($selected): void {
+                $query->where('active', true);
+
+                if ($selected !== null) {
+                    $query->orWhereKey($selected->id);
+                }
+            })
+            ->orderBy(Source::query()->select('name')->whereColumn('sources.id', 'feeds.source_id'))
+            ->orderBy('name')
+            ->get(['id', 'source_id', 'name', 'url', 'category', 'active']);
     }
 
     /** @param array<string, mixed> $data */
