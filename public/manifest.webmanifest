@@ -1,0 +1,19 @@
+{
+    "name": "Releva Feed",
+    "short_name": "Releva",
+    "description": "Uma leitura mais intencional das notícias que importam.",
+    "lang": "pt-BR",
+    "start_url": "/dashboard",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#f1f5f9",
+    "theme_color": "#0f172a",
+    "icons": [
+        {
+            "src": "/icons/icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ]
+}

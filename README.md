@@ -20,6 +20,15 @@ docker compose up --build
 
 A aplicação estará disponível em <http://localhost>. O Mailpit fica em <http://localhost:8025> e o Vite em `http://localhost:5173`.
 
+### Adicionar como app
+
+O Releva Feed já inclui os arquivos necessários para instalação como PWA. Em produção, acesse o domínio por HTTPS e use o menu do navegador:
+
+- Chrome/Edge no computador ou Android: escolha `Instalar Releva Feed` ou `Adicionar à tela inicial`;
+- Safari no iPhone/iPad: toque em `Compartilhar` e depois em `Adicionar à Tela de Início`.
+
+Em desenvolvimento, `localhost` também é considerado seguro pelos navegadores. A instalação abre o app diretamente no `Meu feed`; páginas e artigos autenticados continuam sendo carregados online.
+
 Se a porta 80 já estiver ocupada na máquina, inicie o Nginx em outra porta, por exemplo: `APP_PORT=8080 docker compose up -d`.
 
 Comandos úteis:

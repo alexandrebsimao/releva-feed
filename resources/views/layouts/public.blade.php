@@ -4,6 +4,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Uma leitura mais intencional das notícias que importam.">
+    <meta name="theme-color" content="#0f172a">
+    <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
+    <link rel="icon" href="{{ asset('icons/icon.svg') }}" type="image/svg+xml">
+    <link rel="apple-touch-icon" href="{{ asset('icons/icon.svg') }}">
     <title>{{ $title ?? config('app.name') }}</title>
     @if (file_exists(public_path('hot')) || file_exists(public_path('build/manifest.json')))
         @vite(['resources/css/app.css', 'resources/js/app.js'])

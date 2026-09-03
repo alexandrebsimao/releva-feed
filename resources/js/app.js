@@ -216,3 +216,11 @@ document.querySelectorAll('[data-infinite-feed]').forEach((feed) => {
 
     observer.observe(sentinel);
 });
+
+if ('serviceWorker' in navigator && window.isSecureContext) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch((error) => {
+            console.error('Não foi possível ativar o modo app.', error);
+        });
+    });
+}
