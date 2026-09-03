@@ -41,7 +41,17 @@ class DashboardController extends Controller
             default => $preferences->radarQuery(auth()->user()),
         };
 
+        $sourceOptions = $mode === 'sources'
+            ? auth()->user()->sources()
+                ->where('sources.active', true)
+                ->orderBy('sources.name')
+                ->get(['sources.id', 'sources.name', 'sources.domain'])
+            : SourceSelection::options();
         $selectedSourceIds = SourceSelection::fromRequest($request);
+
+        if ($mode === 'sources') {
+            $selectedSourceIds = array_values(array_intersect($selectedSourceIds, $sourceOptions->modelKeys()));
+        }
         $categoryOptions = CategorySelection::options();
         $selectedCategory = CategorySelection::fromRequest($request, $categoryOptions);
         $articles->when(
@@ -76,7 +86,7 @@ class DashboardController extends Controller
         return view('dashboard', [
             'articles' => $articles,
             'mode' => $mode,
-            'sources' => SourceSelection::options(),
+            'sources' => $sourceOptions,
             'selectedSourceIds' => $selectedSourceIds,
             'categories' => $categoryOptions,
             'selectedCategory' => $selectedCategory,

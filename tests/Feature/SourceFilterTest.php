@@ -137,6 +137,24 @@ class SourceFilterTest extends TestCase
             ->assertSee('Minhas fontes');
     }
 
+    public function test_my_sources_feed_cannot_be_expanded_with_another_source_filter(): void
+    {
+        $user = User::factory()->create();
+        $selected = Source::factory()->create(['name' => 'Fonte do usuário']);
+        $other = Source::factory()->create(['name' => 'Fonte externa']);
+        $user->sources()->attach($selected);
+        $this->articleFrom($selected, 'Artigo da fonte do usuário');
+        $this->articleFrom($other, 'Artigo da fonte externa');
+
+        $this->actingAs($user)
+            ->get(route('my-sources.index', ['sources' => [$other->id]]))
+            ->assertOk()
+            ->assertSee('Artigo da fonte do usuário')
+            ->assertDontSee('Artigo da fonte externa')
+            ->assertSee('Fonte do usuário')
+            ->assertDontSee('Fonte externa');
+    }
+
     public function test_my_feed_shows_the_publication_date_for_an_unclustered_article(): void
     {
         $user = User::factory()->create();
