@@ -6,7 +6,9 @@ use App\Models\Article;
 use App\Models\Feed;
 use App\Models\NewsCluster;
 use App\Models\Source;
+use App\Models\Topic;
 use App\Models\User;
+use App\Models\UserTopicPreference;
 use App\Services\News\HomepageNewsService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -153,6 +155,51 @@ class SourceFilterTest extends TestCase
             ->assertDontSee('Artigo da fonte externa')
             ->assertSee('Fonte do usuário')
             ->assertDontSee('Fonte externa');
+    }
+
+    public function test_my_interests_only_shows_articles_from_selected_sources(): void
+    {
+        $user = User::factory()->create();
+        $topic = Topic::factory()->create(['name' => 'Tecnologia']);
+        $selected = Source::factory()->create(['name' => 'Fonte selecionada']);
+        $unselected = Source::factory()->create(['name' => 'Fonte não selecionada']);
+        $user->sources()->attach($selected);
+        $user->topicPreferences()->create([
+            'topic_id' => $topic->id,
+            'preference' => UserTopicPreference::PREFERENCE_FOLLOW,
+        ]);
+
+        $selectedArticle = $this->articleFrom($selected, 'Interesse da fonte selecionada');
+        $unselectedArticle = $this->articleFrom($unselected, 'Interesse da fonte não selecionada');
+        $selectedArticle->topics()->attach($topic, ['confidence' => 1, 'detected_by' => 'test']);
+        $unselectedArticle->topics()->attach($topic, ['confidence' => 1, 'detected_by' => 'test']);
+
+        $this->actingAs($user)
+            ->get(route('dashboard', ['view' => 'interests']))
+            ->assertOk()
+            ->assertSee($selectedArticle->original_title)
+            ->assertDontSee($unselectedArticle->original_title)
+            ->assertSee('Fonte selecionada')
+            ->assertDontSee('Fonte não selecionada');
+    }
+
+    public function test_my_interests_is_empty_without_selected_sources(): void
+    {
+        $user = User::factory()->create();
+        $topic = Topic::factory()->create();
+        $source = Source::factory()->create();
+        $user->topicPreferences()->create([
+            'topic_id' => $topic->id,
+            'preference' => UserTopicPreference::PREFERENCE_FOLLOW,
+        ]);
+        $article = $this->articleFrom($source, 'Interesse sem fonte selecionada');
+        $article->topics()->attach($topic, ['confidence' => 1, 'detected_by' => 'test']);
+
+        $this->actingAs($user)
+            ->get(route('dashboard', ['view' => 'interests']))
+            ->assertOk()
+            ->assertDontSee($article->original_title)
+            ->assertSee('Você ainda não selecionou nenhuma fonte.');
     }
 
     public function test_my_feed_shows_the_publication_date_for_an_unclustered_article(): void

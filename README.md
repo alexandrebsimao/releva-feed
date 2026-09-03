@@ -228,7 +228,7 @@ Aliases são normalizados sem acentos, em minúsculas e com espaços consistente
 
 ## Preferências individuais
 
-Em `/preferences`, cada usuário encontra as configurações de **Assuntos** e **Fontes**. O `/dashboard` funciona como o **Meu feed** e permite alternar entre **Todos**, **Minhas fontes** e **Meus interesses**, além de filtrar por uma ou mais fontes. A visão por fontes mostra artigos de todas as fontes selecionadas pelo usuário, sem filtro por assunto; `/my-sources` permanece como URL compatível para abrir essa visão. Acontecimentos consolidados aparecem agrupados no próprio feed. Uma notícia só entra em **Meus interesses** quando possui um assunto acompanhado; se também possuir qualquer assunto excluído pelo mesmo usuário, a exclusão tem precedência. Essa regra fica centralizada em `UserTopicPreferenceService`.
+Em `/preferences`, cada usuário encontra as configurações de **Assuntos** e **Fontes**. O `/dashboard` funciona como o **Meu feed** e permite alternar entre **Todos**, **Minhas fontes** e **Meus interesses**, além de filtrar por uma ou mais fontes. A visão por fontes mostra artigos de todas as fontes selecionadas pelo usuário, sem filtro por assunto; `/my-sources` permanece como URL compatível para abrir essa visão. Acontecimentos consolidados aparecem agrupados no próprio feed. Uma notícia só entra em **Meus interesses** quando possui um assunto acompanhado e vem de uma fonte ativa selecionada pelo usuário; se também possuir qualquer assunto excluído pelo mesmo usuário, a exclusão tem precedência. Sem fontes selecionadas, essa visão permanece vazia. Essa regra fica centralizada em `UserTopicPreferenceService`, com a restrição de fontes aplicada no `DashboardController`.
 
 ## Decisões de versão
 

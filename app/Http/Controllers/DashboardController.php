@@ -41,17 +41,31 @@ class DashboardController extends Controller
             default => $preferences->radarQuery(auth()->user()),
         };
 
-        $sourceOptions = $mode === 'sources'
-            ? auth()->user()->sources()
+        $userSourceOptions = auth()->user()->sources()
                 ->where('sources.active', true)
                 ->orderBy('sources.name')
-                ->get(['sources.id', 'sources.name', 'sources.domain'])
+                ->get(['sources.id', 'sources.name', 'sources.domain']);
+        $sourceOptions = in_array($mode, ['sources', 'interests'], true)
+            ? $userSourceOptions
             : SourceSelection::options();
         $selectedSourceIds = SourceSelection::fromRequest($request);
 
-        if ($mode === 'sources') {
+        if (in_array($mode, ['sources', 'interests'], true)) {
             $selectedSourceIds = array_values(array_intersect($selectedSourceIds, $sourceOptions->modelKeys()));
         }
+        $allowedSourceIds = $sourceOptions->modelKeys();
+
+        if ($mode === 'interests') {
+            $articles->when(
+                $allowedSourceIds === [],
+                fn ($query) => $query->whereRaw('1 = 0'),
+                fn ($query) => $query->whereHas(
+                    'feed',
+                    fn ($feedQuery) => $feedQuery->whereIn('source_id', $allowedSourceIds),
+                ),
+            );
+        }
+
         $categoryOptions = CategorySelection::options();
         $selectedCategory = CategorySelection::fromRequest($request, $categoryOptions);
         $articles->when(
@@ -66,8 +80,23 @@ class DashboardController extends Controller
             ),
         );
 
+        $clusterSourceIds = $mode === 'all' ? $selectedSourceIds : $allowedSourceIds;
         $articles = $articles
-            ->with(['feed.source', 'topics', 'clusters.articles.feed.source', 'clusters.articles.topics'])
+            ->with([
+                'feed.source',
+                'topics',
+                'clusters' => fn ($clusterQuery) => $clusterQuery->with([
+                    'articles' => fn ($articleQuery) => $articleQuery
+                        ->when(
+                            $clusterSourceIds !== [],
+                            fn ($query) => $query->whereHas(
+                                'feed',
+                                fn ($feedQuery) => $feedQuery->whereIn('source_id', $clusterSourceIds),
+                            ),
+                        )
+                        ->with(['feed.source', 'topics']),
+                ]),
+            ])
             ->orderByDesc('published_at')
             ->orderByDesc('imported_at')
             ->paginate(10)
@@ -90,7 +119,10 @@ class DashboardController extends Controller
             'selectedSourceIds' => $selectedSourceIds,
             'categories' => $categoryOptions,
             'selectedCategory' => $selectedCategory,
-            'selectedSourceCount' => auth()->user()->sources()->where('sources.active', true)->count(),
+            'selectedSourceCount' => $userSourceOptions->count(),
+            'sourceFilterEmptyMessage' => $mode === 'interests'
+                ? 'Você ainda não selecionou nenhuma fonte.'
+                : null,
         ]);
     }
 

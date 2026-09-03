@@ -96,6 +96,7 @@ class UserTopicPreferenceTest extends TestCase
         $excluded = Topic::factory()->create(['name' => 'Inteligência Artificial']);
         $allowedArticle = Article::factory()->create(['original_title' => 'Somente tecnologia']);
         $blockedArticle = Article::factory()->create(['original_title' => 'Tecnologia e IA']);
+        $user->sources()->attach($allowedArticle->feed->source);
         $allowedArticle->topics()->attach($followed, ['confidence' => 1, 'detected_by' => 'manual']);
         $blockedArticle->topics()->attach([$followed->id, $excluded->id], ['confidence' => 1, 'detected_by' => 'manual']);
         UserTopicPreference::factory()->create([

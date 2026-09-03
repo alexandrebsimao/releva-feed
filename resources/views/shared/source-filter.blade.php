@@ -43,7 +43,7 @@
             @endif
 
             @if ($sources->isEmpty())
-                <p class="mt-5 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">Nenhuma fonte ativa cadastrada.</p>
+                <p class="mt-5 rounded-xl bg-slate-50 px-4 py-3 text-sm text-slate-500">{{ $sourceFilterEmptyMessage ?? 'Nenhuma fonte ativa cadastrada.' }}</p>
             @else
                 <div class="mt-5">
                     <label for="source-filter-search" class="sr-only">Buscar fonte</label>
