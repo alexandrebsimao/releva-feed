@@ -1,12 +1,12 @@
 <x-layouts.authenticated>
-    <section class="mx-auto max-w-6xl px-6 py-12 lg:py-16">
+    <section class="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12 lg:py-16">
         <div>
             <p class="text-sm font-semibold uppercase tracking-[0.2em] text-amber-600">Sua leitura</p>
-            <h1 class="mt-3 text-4xl font-semibold tracking-tight text-slate-950">Meu feed</h1>
+            <h1 class="mt-3 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">Meu feed</h1>
             <p class="mt-3 max-w-2xl text-slate-500">Escolha se quer ver todos os artigos, as suas fontes ou apenas os assuntos que acompanha.</p>
         </div>
 
-        <nav class="sticky top-0 z-30 -mx-4 mt-10 flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-slate-100/95 p-2 shadow-sm backdrop-blur sm:-mx-6" aria-label="Filtro do feed">
+        <nav class="sticky top-0 z-30 -mx-4 mt-8 flex flex-wrap gap-2 rounded-2xl border border-slate-200 bg-slate-100/95 p-2 shadow-sm backdrop-blur sm:-mx-6 sm:mt-10" aria-label="Filtro do feed">
             @foreach (['all' => 'Todos', 'sources' => 'Minhas fontes', 'interests' => 'Meus interesses'] as $feedMode => $label)
                 <a href="{{ route('dashboard', ['view' => $feedMode]) }}" @class([
                     'rounded-xl px-4 py-2.5 text-sm font-semibold transition',
@@ -26,7 +26,7 @@
 
         <section @if (! $articles->isEmpty()) data-infinite-feed @endif class="mt-5 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
             <div class="flex flex-col justify-between gap-4 border-b border-slate-100 px-6 py-6 sm:flex-row sm:items-center">
-                <div>
+                <div class="min-w-0">
                     @if ($mode === 'all')
                         <p class="text-sm font-medium text-slate-500">Visão completa</p>
                         <h2 class="mt-1 text-2xl font-semibold text-slate-950">Todos os artigos</h2>
@@ -70,10 +70,11 @@
                                 @php($renderedClusters[] = $cluster->id)
                                 @php($clusterTopics = $cluster->articles->flatMap->topics->unique('id')->take(3))
                                 @php($clusterSources = $cluster->articles->map(fn ($clusterArticle) => $clusterArticle->feed?->source?->name)->filter()->unique()->values())
-                                <article data-feed-item-key="cluster-{{ $cluster->id }}" class="px-6 py-7 transition hover:bg-slate-50">
+                                <article data-feed-item-key="cluster-{{ $cluster->id }}" class="px-4 py-6 transition hover:bg-slate-50 sm:px-6 sm:py-7">
                                     <div class="flex flex-wrap items-center gap-3 text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
                                         <span class="rounded-full bg-amber-100 px-2.5 py-1 text-amber-800">Acontecimento</span>
-                                        @if ($cluster->last_article_at)<time datetime="{{ $cluster->last_article_at->toIso8601String() }}">{{ $cluster->last_article_at->format('d/m/Y H:i') }}</time>@endif
+                                        @php($clusterDate = $cluster->last_article_at ?? $cluster->published_at)
+                                        @if ($clusterDate)<time datetime="{{ $clusterDate->toIso8601String() }}">{{ $clusterDate->format('d/m/Y H:i') }}</time>@endif
                                     </div>
                                     <h3 class="mt-4 text-2xl font-semibold leading-tight tracking-tight text-slate-950">{{ $cluster->title }}</h3>
                                     @if ($cluster->summary)<p class="mt-3 max-w-4xl text-sm leading-7 text-slate-600">{{ $cluster->summary }}</p>@endif
@@ -93,9 +94,14 @@
                             @endif
                         @endforeach
                         @if ($article->clusters->isEmpty())
-                            <article data-feed-item-key="article-{{ $article->id }}" class="px-6 py-6 transition hover:bg-slate-50">
+                            <article data-feed-item-key="article-{{ $article->id }}" class="px-4 py-6 transition hover:bg-slate-50 sm:px-6">
                                 <a href="{{ $article->url }}" target="_blank" rel="noopener noreferrer" class="text-lg font-semibold leading-7 text-slate-900 hover:text-amber-700">{{ $article->original_title }}</a>
                                 <p class="mt-2 text-sm text-slate-500">{{ $article->feed->source->name }} · {{ $article->feed->name }}</p>
+                                @if ($article->published_at)
+                                    <time datetime="{{ $article->published_at->toIso8601String() }}" class="mt-2 block text-xs text-slate-400">Publicado {{ $article->published_at->format('d/m/Y H:i') }}</time>
+                                @elseif ($article->imported_at)
+                                    <time datetime="{{ $article->imported_at->toIso8601String() }}" class="mt-2 block text-xs text-slate-400">Importado {{ $article->imported_at->format('d/m/Y H:i') }}</time>
+                                @endif
                                 @if ($mode === 'interests')<p class="mt-2 text-xs font-medium text-slate-400">Relevância para você: {{ $article->user_relevance_score }}/100</p>@endif
                                 @if ($article->description)<p class="mt-3 max-w-4xl text-sm leading-6 text-slate-600">{{ \Illuminate\Support\Str::limit($article->description, 240) }}</p>@endif
                                 <div class="mt-4 flex flex-wrap gap-2">@foreach ($article->topics as $topic)<span class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">{{ $topic->name }}</span>@endforeach</div>

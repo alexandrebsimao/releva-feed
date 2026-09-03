@@ -137,6 +137,20 @@ class SourceFilterTest extends TestCase
             ->assertSee('Minhas fontes');
     }
 
+    public function test_my_feed_shows_the_publication_date_for_an_unclustered_article(): void
+    {
+        $user = User::factory()->create();
+        $source = Source::factory()->create();
+        $article = $this->articleFrom($source, 'Artigo sem cluster');
+        $article->update(['published_at' => now()->subHours(3)]);
+        $article->refresh();
+
+        $this->actingAs($user)
+            ->get(route('dashboard', ['view' => 'all']))
+            ->assertOk()
+            ->assertSee('Publicado '.$article->published_at->format('d/m/Y H:i'));
+    }
+
     public function test_unified_feed_can_switch_between_all_articles_and_selected_sources(): void
     {
         $user = User::factory()->create();
