@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Article;
 use App\Services\News\UserRelevanceCalculator;
 use App\Services\Topic\UserTopicPreferenceService;
+use App\Support\CategorySelection;
 use App\Support\SourceSelection;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -40,9 +42,18 @@ class DashboardController extends Controller
         };
 
         $selectedSourceIds = SourceSelection::fromRequest($request);
+        $categoryOptions = CategorySelection::options();
+        $selectedCategory = CategorySelection::fromRequest($request, $categoryOptions);
         $articles->when(
             $selectedSourceIds !== [],
             fn ($query) => $query->whereHas('feed', fn ($feedQuery) => $feedQuery->whereIn('source_id', $selectedSourceIds)),
+        );
+        $articles->when(
+            $selectedCategory !== null,
+            fn ($query) => $query->whereHas(
+                'feed',
+                fn ($feedQuery) => $feedQuery->whereIn('category', CategorySelection::feedValues($selectedCategory, $categoryOptions)),
+            ),
         );
 
         $articles = $articles
@@ -67,6 +78,8 @@ class DashboardController extends Controller
             'mode' => $mode,
             'sources' => SourceSelection::options(),
             'selectedSourceIds' => $selectedSourceIds,
+            'categories' => $categoryOptions,
+            'selectedCategory' => $selectedCategory,
             'selectedSourceCount' => auth()->user()->sources()->where('sources.active', true)->count(),
         ]);
     }
@@ -80,7 +93,7 @@ class DashboardController extends Controller
             : 'interests';
     }
 
-    private function sourcesQuery(): \Illuminate\Database\Eloquent\Builder
+    private function sourcesQuery(): Builder
     {
         $sourceIds = auth()->user()->sources()
             ->where('sources.active', true)

@@ -21,6 +21,8 @@
                 'filterAction' => route('dashboard', ['view' => $mode]),
                 'sources' => $sources,
                 'selectedSourceIds' => $selectedSourceIds,
+                'categories' => $categories,
+                'selectedCategory' => $selectedCategory,
             ])
         </div>
 

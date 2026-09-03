@@ -151,6 +151,22 @@ class SourceFilterTest extends TestCase
             ->assertSee('Publicado '.$article->published_at->format('d/m/Y H:i'));
     }
 
+    public function test_my_feed_can_be_filtered_by_category(): void
+    {
+        $user = User::factory()->create();
+        $source = Source::factory()->create();
+        $included = $this->articleFrom($source, 'Artigo de tecnologia', 'technology');
+        $this->articleFrom($source, 'Artigo de economia', 'economy');
+
+        $this->actingAs($user)
+            ->get(route('dashboard', ['view' => 'all', 'category' => 'tecnologia']))
+            ->assertOk()
+            ->assertSee($included->original_title)
+            ->assertDontSee('Artigo de economia')
+            ->assertSee('Filtrar por categoria')
+            ->assertSee('Tecnologia');
+    }
+
     public function test_unified_feed_can_switch_between_all_articles_and_selected_sources(): void
     {
         $user = User::factory()->create();
@@ -194,9 +210,9 @@ class SourceFilterTest extends TestCase
             ->assertSee('1 fonte selecionada');
     }
 
-    private function articleFrom(Source $source, string $title): Article
+    private function articleFrom(Source $source, string $title, ?string $category = null): Article
     {
-        $feed = Feed::factory()->create(['source_id' => $source->id]);
+        $feed = Feed::factory()->create(['source_id' => $source->id, 'category' => $category]);
 
         return Article::factory()->create([
             'feed_id' => $feed->id,
