@@ -3,10 +3,20 @@
     "name": "releva/feed",
     "type": "project",
     "description": "Curadoria pessoal de notícias com Laravel.",
-    "keywords": ["laravel", "news", "rss", "curation"],
+    "keywords": [
+        "laravel",
+        "news",
+        "rss",
+        "curation"
+    ],
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "ext-bcmath": "*",
+        "ext-intl": "*",
+        "ext-pcntl": "*",
+        "ext-pdo_pgsql": "*",
+        "ext-zip": "*",
         "laravel/ai": "^0.11",
         "laravel/framework": "^13.0",
         "laravel/tinker": "^3.0",
