@@ -42,6 +42,7 @@ Os seguintes arquivos foram estruturados para viabilizar o deploy via buildpack:
    - Dokploy e o `heroku-php-nginx` utilizam a variável dinâmica `$PORT`. Configure a porta do container como `5000` (ou a porta exposta pelo Dokploy).
 6. Na aba **Environment**:
    - Copie as variáveis do arquivo [.env.dokploy.example](file:///Users/alexandreaugustobernssimao/Projects/releva-feed/.env.dokploy.example).
+   - Adicione **`PORT=5000`** nas variáveis de ambiente para travar a porta e impedir que o Dokploy sorteie uma porta aleatória a cada deploy.
    - Gere o `APP_KEY` (se você já tiver gerado um para produção, utilize o mesmo; caso contrário, gere localmente com `php artisan key:generate --show`).
    - Configure as credenciais do PostgreSQL obtidas no Passo 1.
    - Adicione `NPM_CONFIG_PRODUCTION=false` para garantir que o Vite e o Tailwind sejam instalados e compilados no build.
