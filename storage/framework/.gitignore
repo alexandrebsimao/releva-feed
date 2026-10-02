@@ -1,2 +1,10 @@
 *
 !.gitignore
+!cache/
+!cache/**
+!sessions/
+!sessions/**
+!testing/
+!testing/**
+!views/
+!views/**
