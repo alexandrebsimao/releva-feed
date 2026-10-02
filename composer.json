@@ -57,7 +57,7 @@
             "npx concurrently -c \"#93c5fd,#c4b5fd,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"npm run dev\" --names=http,queue,vite"
         ],
         "post-autoload-dump": [
-            "@php -r \"@mkdir('storage/framework/views', 0775, true); @mkdir('storage/framework/cache/data', 0775, true); @mkdir('storage/framework/sessions', 0775, true); @mkdir('bootstrap/cache', 0775, true); @mkdir('vendor/bin', 0775, true); file_put_contents('vendor/bin/heroku-php-nginx', '#!/usr/bin/env sh' . PHP_EOL . 'exec heroku-php-nginx \\\"\\$@\\\"' . PHP_EOL); chmod('vendor/bin/heroku-php-nginx', 0755);\"",
+            "@php -r \"@mkdir('storage/framework/views', 0775, true); @mkdir('storage/framework/cache/data', 0775, true); @mkdir('storage/framework/sessions', 0775, true); @mkdir('bootstrap/cache', 0775, true); @mkdir('vendor/bin', 0775, true); file_put_contents('vendor/bin/heroku-php-nginx', '#!/usr/bin/env sh' . PHP_EOL . 'mkdir -p /app/.heroku/php/var/run/nginx /tmp/client_body_temp /tmp/fastcgi_temp' . PHP_EOL . 'exec heroku-php-nginx \\\"\\$@\\\"' . PHP_EOL); chmod('vendor/bin/heroku-php-nginx', 0755);\"",
             "@php artisan package:discover --ansi"
         ],
         "post-update-cmd": [
