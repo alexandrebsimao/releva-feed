@@ -81,15 +81,18 @@ O Laravel possui tarefas agendadas (verificação periódica de feeds a cada 6h,
 No Dokploy, você pode escolher **uma** das seguintes alternativas:
 
 #### Alternativa A: Usar a aba Schedules / Cron do Dokploy (Recomendada)
-1. Na aplicação `releva-feed-web` (ou `releva-feed-worker`), vá até a aba **Schedules** (ou **Cron Jobs**).
+1. Na aplicação `releva-feed-web`, vá até a aba **Schedules** (ou **Cron Jobs**).
 2. Adicione uma tarefa com a expressão:
    ```cron
-   * * * * *
+   */30 * * * *
    ```
+   *(ou `0 * * * *` a cada hora)*
 3. Comando a executar:
+   > **Nota Importante:** Como o Dokploy executa o cron via `docker exec bash -c` em sessão não-interativa, a variável `$PATH` padrão não inclui o PHP instalado pelo buildpack do Heroku. Utilize o caminho absoluto do PHP ou o script `/app/cron.sh`:
    ```bash
-   php artisan schedule:run
+   /app/.heroku/php/bin/php /app/artisan feeds:collect --sync --process
    ```
+   *(Ou alternativamente: `bash /app/cron.sh`)*
 
 #### Alternativa B: Criar um container dedicado para o Scheduler
 1. Crie uma aplicação `releva-feed-scheduler` apontando para o mesmo repositório e variáveis.
