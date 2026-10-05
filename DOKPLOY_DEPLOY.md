@@ -103,12 +103,62 @@ No Dokploy, você pode escolher **uma** das seguintes alternativas:
 
 ### 5. Primeira Coleta de Feeds (Opcional / Inicial)
 
-Após a aplicação e o worker estarem ativos, você pode disparar a primeira coleta de notícias manualmente:
+Após a aplicação e o worker estarem ativos, você pode disparar a primeira coleta de notícias diretamente no terminal do Dokploy:
 
 1. No Dokploy, acesse a aplicação `releva-feed-web`.
 2. Vá até a aba **Terminal / Console**.
-3. Execute:
+3. Para coletar e ver o resultado imediatamente na tela (modo síncrono):
+   ```bash
+   php artisan feeds:collect --sync
+   ```
+4. Para coletar via fila (assíncrono):
    ```bash
    php artisan feeds:collect
    ```
-4. Acompanhe o processamento na aba **Logs** da aplicação `releva-feed-worker`.
+
+---
+
+## 🔍 Diagnóstico: Notícias Não Estão Atualizando?
+
+Se a página inicial não estiver exibindo notícias ou a atualização não acontecer, execute o comando de diagnóstico no terminal da aplicação `releva-feed-web`:
+
+```bash
+php artisan feeds:status
+```
+
+O comando verificará automaticamente:
+- Se as fontes e feeds estão populados no banco (`feeds` e `sources`).
+- Se existem jobs parados na tabela `jobs` do PostgreSQL (sintoma de worker parado).
+- Se existem jobs com falha na tabela `failed_jobs`.
+- Se os artigos estão como `pending`, `processing`, `failed` ou `processed`.
+- Se a chave `GROQ_API_KEY` está preenchida nas variáveis de ambiente.
+
+### Principais Causas e Soluções:
+
+1. **O Worker de Filas (`releva-feed-worker`) não foi criado ou não está rodando**:
+   - No Dokploy, apenas a aplicação Web é iniciada por padrão.
+   - O Laravel salva os jobs na tabela `jobs` do PostgreSQL, mas **ninguém consome** se o container do worker não estiver ativo.
+   - **Solução**: Crie a aplicação `releva-feed-worker` com o comando:
+     ```bash
+     php artisan queue:work --queue=feeds,articles,digests,topics,default --sleep=3 --tries=3 --timeout=180 --no-interaction
+     ```
+
+2. **O Agendador (Cron) não está ativo no Dokploy**:
+   - Por padrão, a coleta automática roda a cada 6 horas (`routes/console.php`).
+   - Se o cron do Dokploy não estiver chamando `php artisan schedule:run` a cada minuto, o agendamento nunca dispara.
+   - **Solução**: Na aplicação `releva-feed-web`, acesse **Schedules / Cron Jobs** e crie a regra:
+     - Expressão: `* * * * *`
+     - Comando: `php artisan schedule:run`
+
+3. **Banco de Dados não foi semeado (Tabela de Feeds Vazia)**:
+   - Se o deploy foi feito sem executar o seeder, `feeds` estará vazio e nada será coletado.
+   - **Solução**: No terminal da aplicação Web, execute:
+     ```bash
+     php artisan db:seed --class=DatabaseSeeder --force
+     ```
+
+4. **Chave `GROQ_API_KEY` ausente ou inválida**:
+   - Os artigos são importados pelo feed, mas precisam ser classificados e sumarizados por IA para gerarem notícias e clusters na home.
+   - Se `GROQ_API_KEY` estiver vazia ou com erro, os artigos ficam com status `failed`.
+   - **Solução**: Preencha `GROQ_API_KEY` na aba **Environment** da aplicação Web e do Worker.
+

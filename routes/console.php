@@ -5,10 +5,20 @@ use App\Jobs\DiscoverTopicsJob;
 use App\Jobs\DispatchFeedFetchesJob;
 use Illuminate\Support\Facades\Schedule;
 
-Schedule::job(new DispatchFeedFetchesJob)
+$feedSchedule = Schedule::job(new DispatchFeedFetchesJob)
     ->name('dispatch-feed-fetches')
-    ->everySixHours()
     ->withoutOverlapping();
+
+$feedFrequency = env('FEEDS_SCHEDULE_FREQUENCY', 'everySixHours');
+
+match ($feedFrequency) {
+    'everyFifteenMinutes' => $feedSchedule->everyFifteenMinutes(),
+    'everyThirtyMinutes' => $feedSchedule->everyThirtyMinutes(),
+    'hourly' => $feedSchedule->hourly(),
+    'everyTwoHours' => $feedSchedule->everyTwoHours(),
+    'everyThreeHours' => $feedSchedule->everyThreeHours(),
+    default => $feedSchedule->everySixHours(),
+};
 
 Schedule::job(new BuildDailyDigestsJob)
     ->name('build-daily-digests')
