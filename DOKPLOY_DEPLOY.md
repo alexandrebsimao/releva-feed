@@ -88,11 +88,10 @@ No Dokploy, você pode escolher **uma** das seguintes alternativas:
    ```
    *(ou `0 * * * *` a cada hora)*
 3. Comando a executar:
-   > **Nota Importante:** Como o Dokploy executa o cron via `docker exec bash -c` em sessão não-interativa, a variável `$PATH` padrão não inclui o PHP instalado pelo buildpack do Heroku. Utilize o caminho absoluto do PHP ou o script `/app/cron.sh`:
+   > **Nota Importante:** Como o Dokploy utiliza **Cloud Native Buildpacks**, para executar qualquer comando dentro do container mantendo o PHP e as extensões no PATH, utilize o prefixo oficial do launcher:
    ```bash
-   /app/.heroku/php/bin/php /app/artisan feeds:collect --sync --process
+   /cnb/lifecycle/launcher php artisan feeds:collect --sync --process
    ```
-   *(Ou alternativamente: `bash /app/cron.sh`)*
 
 #### Alternativa B: Criar um container dedicado para o Scheduler
 1. Crie uma aplicação `releva-feed-scheduler` apontando para o mesmo repositório e variáveis.
