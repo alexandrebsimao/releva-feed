@@ -4,5 +4,7 @@
     "to": "a",
     "of": "de",
     "results": "resultados",
-    "Go to page :page": "Ir para a página :page"
+    "Go to page :page": "Ir para a página :page",
+    "If you're having trouble clicking the \":actionText\" button, copy and paste the URL below\ninto your web browser:": "Se o botão \":actionText\" não funcionar, copie e cole o endereço abaixo no seu navegador:",
+    "All rights reserved.": "Todos os direitos reservados."
 }

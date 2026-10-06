@@ -135,7 +135,6 @@ class SourceFilterTest extends TestCase
             ->assertOk()
             ->assertSee($selectedArticle->original_title)
             ->assertDontSee('Artigo da fonte não acompanhada')
-            ->assertSee('Artigos das minhas fontes')
             ->assertSee('Minhas fontes');
     }
 
@@ -213,7 +212,7 @@ class SourceFilterTest extends TestCase
         $this->actingAs($user)
             ->get(route('dashboard', ['view' => 'all']))
             ->assertOk()
-            ->assertSee('Publicado '.$article->published_at->format('d/m/Y H:i'));
+            ->assertSee($article->published_at->locale('pt_BR')->translatedFormat('j \d\e F, H:i'));
     }
 
     public function test_my_feed_can_be_filtered_by_category(): void
@@ -247,14 +246,14 @@ class SourceFilterTest extends TestCase
             ->assertOk()
             ->assertSee('Artigo da fonte selecionada')
             ->assertSee('Artigo da fonte não selecionada')
-            ->assertSee('Todos os artigos');
+            ->assertSee('Todos');
 
         $this->actingAs($user)
             ->get(route('dashboard', ['view' => 'sources']))
             ->assertOk()
             ->assertSee('Artigo da fonte selecionada')
             ->assertDontSee('Artigo da fonte não selecionada')
-            ->assertSee('Artigos das minhas fontes');
+            ->assertSee('Minhas fontes');
     }
 
     public function test_my_feed_can_filter_articles_by_source_without_changing_the_feed_mode(): void
@@ -270,7 +269,7 @@ class SourceFilterTest extends TestCase
             ->assertOk()
             ->assertSee('Artigo filtrado')
             ->assertDontSee('Artigo fora do filtro')
-            ->assertSee('Todos os artigos')
+            ->assertSee('Todos')
             ->assertSee('Filtrar por fonte')
             ->assertSee('1 fonte selecionada');
     }

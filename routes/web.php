@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmailVerificationController;
 use App\Http\Controllers\FeedController;
 use App\Http\Controllers\HomepageController;
 use App\Http\Controllers\NewsClusterController;
@@ -22,10 +24,21 @@ Route::middleware('guest')->group(function (): void {
     Route::post('/login', [AuthController::class, 'store'])->name('login.store');
 });
 
+// Reachable while the e-mail is still unverified.
 Route::middleware('auth')->group(function (): void {
+    Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
+    Route::get('/email/verify', [EmailVerificationController::class, 'notice'])->name('verification.notice');
+    Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'verify'])
+        ->middleware(['signed', 'throttle:6,1'])
+        ->name('verification.verify');
+    Route::post('/email/verification-notification', [EmailVerificationController::class, 'send'])
+        ->middleware('throttle:6,1')
+        ->name('verification.send');
+});
+
+Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::get('/radar', Radar::class)->name('radar');
-    Route::post('/logout', [AuthController::class, 'destroy'])->name('logout');
     Route::get('/articles', [ArticleController::class, 'index'])->name('articles.index');
     Route::get('/my-sources', [DashboardController::class, 'sources'])->name('my-sources.index');
     Route::get('/preferences', PreferencesController::class)->name('preferences.index');
@@ -49,7 +62,11 @@ Route::middleware('auth')->group(function (): void {
         ->only(['create', 'store', 'edit', 'update', 'destroy']);
 });
 
-Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function (): void {
+Route::middleware(['auth', 'verified', 'admin'])->prefix('admin')->name('admin.')->group(function (): void {
+    Route::resource('users', AdminUserController::class)->except(['show']);
+    Route::post('/users/{user}/resend-verification', [AdminUserController::class, 'resendVerification'])
+        ->middleware('throttle:6,1')
+        ->name('users.resend-verification');
     Route::get('/sources', [AdminController::class, 'sources'])->name('sources.index');
     Route::patch('/sources/{source}/toggle', [AdminController::class, 'toggleSource'])->name('sources.toggle');
     Route::get('/observability', [AdminController::class, 'index'])->name('observability');

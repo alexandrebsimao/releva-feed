@@ -5,6 +5,12 @@
             <h1 class="mt-4 text-3xl font-semibold text-white">Entre no seu feed</h1>
             <p class="mt-3 text-sm leading-6 text-slate-400">O cadastro é controlado pelo administrador nesta primeira versão.</p>
 
+            @if (session('status'))
+                <div class="mt-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm font-medium text-emerald-300">
+                    {{ session('status') }}
+                </div>
+            @endif
+
             <form method="POST" action="{{ route('login.store') }}" class="mt-8 space-y-5">
                 @csrf
                 <div>

@@ -39,7 +39,15 @@
 
         <div class="sidebar-bottom">
             @if (auth()->user()->is_admin)
-                <a href="{{ route('admin.observability') }}" class="sidebar-link sidebar-link-small">
+                <a href="{{ route('admin.users.index') }}" @class(['sidebar-link', 'sidebar-link-small', 'is-active' => request()->routeIs('admin.users.*')])>
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="9" cy="7" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    <span>Usuários</span>
+                </a>
+                <a href="{{ route('admin.sources.index') }}" @class(['sidebar-link', 'sidebar-link-small', 'is-active' => request()->routeIs('admin.sources.*')])>
+                    <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+                    <span>Fontes</span>
+                </a>
+                <a href="{{ route('admin.observability') }}" @class(['sidebar-link', 'sidebar-link-small', 'is-active' => request()->routeIs('admin.observability')])>
                     <svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M4 19.5h16M6.5 17V9.5M12 17V5.5M17.5 17v-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
                     <span>Operação</span>
                 </a>
@@ -67,6 +75,10 @@
             <div class="mobile-account-popover">
                 <p>{{ auth()->user()->name }}</p>
                 <a href="{{ route('preferences.index') }}">Preferências</a>
+                @if (auth()->user()->is_admin)
+                    <a href="{{ route('admin.users.index') }}">Usuários</a>
+                    <a href="{{ route('admin.observability') }}">Operação</a>
+                @endif
                 <form method="POST" action="{{ route('logout') }}">@csrf<button type="submit">Sair</button></form>
             </div>
         </details>
